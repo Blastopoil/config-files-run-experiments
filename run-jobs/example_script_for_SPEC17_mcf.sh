@@ -1,6 +1,7 @@
 #!/bin/bash
 #SBATCH --partition=ce_200
 #SBATCH --nodelist=ce209
+#SBATCH --mem-per-cpu=5G
 #SBATCH --job-name=mcf_MediumSonicBOOM
 #SBATCH --output=/nfs/home/ce/felixfdec/gem5/config-files-run-experiments/1-output-jobs/SPEC17/mcf/slurm-%j.out
 
