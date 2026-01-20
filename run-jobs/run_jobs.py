@@ -69,18 +69,28 @@ def submit_job(script_path):
 def main():
     parser = argparse.ArgumentParser(description="Run gem5 simulations with divided IQ for different benchmarks.")
     parser.add_argument(
-        "benchmark", 
+        "--benchmark", 
         choices=["Splash-4", "NAS", "SPEC17", "ALL"], 
         help="Benchmark to run (or ALL for all benchmarks)"
+    )
+    parser.add_argument(
+        "--config", 
+        choices=["MediumSonicBOOM",
+                 "MediumSonicBOOM_TAGE_SC_L"],
+        required=True,
+        help="Configuration to use (if not specified, both will be used)"
     )
     args = parser.parse_args()
     
     benchmarks = [args.benchmark] if args.benchmark != "ALL" else ["Splash-4", "NAS", "SPEC17"]
-    configs = ["MediumSonicBOOM", 
-            #  "SmallO3"
-               ]
+    configs = []
+    configs.append(args.config) if args.config else configs.extend(["MediumSonicBOOM", "MediumSonicBOOM_TAGE_SC_L"])
     
-    gem5_binary = "/nfs/home/ce/felixfdec/gem5v25_0/build/RISCV/gem5.opt"
+    # For gem5 v25.0
+    #gem5_binary = "/nfs/home/ce/felixfdec/gem5v25_0/build/RISCV/gem5.opt
+    # For gem5 v25.1
+    gem5_binary = "/nfs/home/ce/felixfdec/gem5/build/RISCV/gem5.opt"
+
     config_script = "/nfs/home/ce/felixfdec/gem5/config-files-run-experiments/config-files/launch_fs_from_ckpt.py"
     
     # Disk images and memory sizes per benchmark

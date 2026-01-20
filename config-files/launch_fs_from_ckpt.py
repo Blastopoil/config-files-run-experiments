@@ -40,7 +40,7 @@ parser.add_argument(
     help="Full path to disk image",
 )
 
-config_choices = ["MediumSonicBOOM"]
+config_choices = ["MediumSonicBOOM", "MediumSonicBOOM_TAGE_SC_L"]
 parser.add_argument(
     "--config",
     choices=config_choices,
@@ -71,6 +71,9 @@ match (args.config):
     case "MediumSonicBOOM":
         from sys_config_factory.factories import medium_sonicboom_factory
         sys_config = medium_sonicboom_factory(mem_size_str)
+    case "MediumSonicBOOM_TAGE_SC_L":
+        from sys_config_factory.factories import medium_sonicboom_tage_sc_l_factory
+        sys_config = medium_sonicboom_tage_sc_l_factory(mem_size_str)
 
 # Board
 board = RiscvBoard(
