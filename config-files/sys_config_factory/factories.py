@@ -23,10 +23,7 @@ def medium_sonicboom_factory(memory_size):
     from gem5.components.memory.multi_channel import DualChannelDDR4_2400
     memory_hierarchy = DualChannelDDR4_2400(size=memory_size)
 
-    from components.branchPredictorComponents import BTB, RAS, TAGE_simple
-    from data.medium_sonicboom_data import MEDIUM_SONICBOOM_BTB_CONFIG, MEDIUM_SONICBOOM_RAS_CONFIG
-    branch_predictor = TAGE_simple(BTB(MEDIUM_SONICBOOM_BTB_CONFIG),
-                                   RAS(MEDIUM_SONICBOOM_RAS_CONFIG))
+    branch_predictor = "MediumSonicBOOM"
 
     from data.medium_sonicboom_data import MEDIUM_SONICBOOM_PROCESSOR_CONFIG
     processor = RiscvO3Processor(bp=branch_predictor, proc_config=MEDIUM_SONICBOOM_PROCESSOR_CONFIG, num_cores=1)
@@ -56,10 +53,7 @@ def medium_sonicboom_tage_sc_l_factory(memory_size):
     from gem5.components.memory.multi_channel import DualChannelDDR4_2400
     memory_hierarchy = DualChannelDDR4_2400(size=memory_size)
 
-    from components.branchPredictorComponents import BTB, RAS, TAGE_SC_L_64K
-    from data.medium_sonicboom_data import MEDIUM_SONICBOOM_BTB_CONFIG, MEDIUM_SONICBOOM_RAS_CONFIG
-    branch_predictor = TAGE_SC_L_64K(BTB(MEDIUM_SONICBOOM_BTB_CONFIG),
-                                     RAS(MEDIUM_SONICBOOM_RAS_CONFIG))
+    branch_predictor = "MediumSonicBOOM_TAGE_SC_L"
 
     from data.medium_sonicboom_data import MEDIUM_SONICBOOM_PROCESSOR_CONFIG
     processor = RiscvO3Processor(bp=branch_predictor, proc_config=MEDIUM_SONICBOOM_PROCESSOR_CONFIG, num_cores=1)
@@ -89,11 +83,8 @@ def medium_sonicboom_tage_l_factory(memory_size):
 
     from gem5.components.memory.multi_channel import DualChannelDDR4_2400
     memory_hierarchy = DualChannelDDR4_2400(size=memory_size)
-
-    from components.branchPredictorComponents import BTB, RAS, TAGE_L_64K
-    from data.medium_sonicboom_data import MEDIUM_SONICBOOM_BTB_CONFIG, MEDIUM_SONICBOOM_RAS_CONFIG
-    branch_predictor = TAGE_L_64K(BTB(MEDIUM_SONICBOOM_BTB_CONFIG),
-                                  RAS(MEDIUM_SONICBOOM_RAS_CONFIG))
+    
+    branch_predictor = "MediumSonicBOOM_TAGE_L"
 
     from data.medium_sonicboom_data import MEDIUM_SONICBOOM_PROCESSOR_CONFIG
     processor = RiscvO3Processor(bp=branch_predictor, proc_config=MEDIUM_SONICBOOM_PROCESSOR_CONFIG, num_cores=1)
@@ -123,11 +114,8 @@ def medium_sonicboom_tage_sc_factory(memory_size):
 
     from gem5.components.memory.multi_channel import DualChannelDDR4_2400
     memory_hierarchy = DualChannelDDR4_2400(size=memory_size)
-
-    from components.branchPredictorComponents import BTB, RAS, TAGE_SC_64K
-    from data.medium_sonicboom_data import MEDIUM_SONICBOOM_BTB_CONFIG, MEDIUM_SONICBOOM_RAS_CONFIG
-    branch_predictor = TAGE_SC_64K(BTB(MEDIUM_SONICBOOM_BTB_CONFIG),
-                                   RAS(MEDIUM_SONICBOOM_RAS_CONFIG))
+    
+    branch_predictor = "MediumSonicBOOM_TAGE_SC"
 
     from data.medium_sonicboom_data import MEDIUM_SONICBOOM_PROCESSOR_CONFIG
     processor = RiscvO3Processor(bp=branch_predictor, proc_config=MEDIUM_SONICBOOM_PROCESSOR_CONFIG, num_cores=1)

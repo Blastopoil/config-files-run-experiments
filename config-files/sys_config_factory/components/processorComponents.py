@@ -23,11 +23,25 @@ class RiscvO3Core(RiscvO3CPU):
         # Set branch predictor
         #TODO: Por alguna razón no me deja asignar self.bp a un predictor de saltos creado desde otro modulo de Python,
         #      solo me deja asignarle uno creado desde este modulo. Intentar hacer que se pueda crear desde fuera
-        if bp == "TAGE":
-            from branchPredictorComponents import BTB, RAS, TAGE_simple
-            from ..data.medium_sonicboom_data import MEDIUM_SONICBOOM_BTB_CONFIG, MEDIUM_SONICBOOM_RAS_CONFIG
-            self.bp = TAGE_simple(BTB(MEDIUM_SONICBOOM_BTB_CONFIG),
-                                  RAS(MEDIUM_SONICBOOM_RAS_CONFIG))
+        
+        from data.medium_sonicboom_data import MEDIUM_SONICBOOM_BTB_CONFIG, MEDIUM_SONICBOOM_RAS_CONFIG
+        match (bp):
+            case "MediumSonicBOOM":
+                from components.branchPredictorComponents import BTB, RAS, TAGE_simple
+                self.branchPred = TAGE_simple(BTB(MEDIUM_SONICBOOM_BTB_CONFIG),
+                                      RAS(MEDIUM_SONICBOOM_RAS_CONFIG))
+            case "MediumSonicBOOM_TAGE_SC_L":
+                from components.branchPredictorComponents import BTB, RAS, TAGE_SC_L_64K
+                self.branchPred = TAGE_SC_L_64K(BTB(MEDIUM_SONICBOOM_BTB_CONFIG),
+                                                RAS(MEDIUM_SONICBOOM_RAS_CONFIG))
+            case "MediumSonicBOOM_TAGE_L":
+                from components.branchPredictorComponents import BTB, RAS, TAGE_L_64K
+                self.branchPred = TAGE_L_64K(BTB(MEDIUM_SONICBOOM_BTB_CONFIG),
+                                              RAS(MEDIUM_SONICBOOM_RAS_CONFIG))
+            case "MediumSonicBOOM_TAGE_SC":
+                from components.branchPredictorComponents import BTB, RAS, TAGE_SC_64K
+                self.branchPred = TAGE_SC_64K(BTB(MEDIUM_SONICBOOM_BTB_CONFIG),
+                                               RAS(MEDIUM_SONICBOOM_RAS_CONFIG))
         
         # Apply any processor configuration values from proc_config
         if proc_config:
