@@ -39,7 +39,7 @@ def generate_sbatch_script(gem5_binary, config_script, benchmark, app, config,
 #SBATCH --job-name={app}_{config}
 #SBATCH --output={output_dir}/slurm-%j.out
 
-{gem5_binary} -re --outdir={output_dir} {config_script} \
+{gem5_binary}  --debug-flags=LTage,TageSCL -re --outdir={output_dir} {config_script} \
     --config {config} \
     --ckpt_path {ckpt_path} \
     --disk_image {disk_image} \
@@ -76,7 +76,9 @@ def main():
     parser.add_argument(
         "--config", 
         choices=["MediumSonicBOOM",
-                 "MediumSonicBOOM_TAGE_SC_L"],
+                 "MediumSonicBOOM_TAGE_SC_L",
+                 "MediumSonicBOOM_TAGE_L", 
+                 "MediumSonicBOOM_TAGE_SC"],
         required=True,
         help="Configuration to use (if not specified, both will be used)"
     )
@@ -89,7 +91,7 @@ def main():
     # For gem5 v25.0
     #gem5_binary = "/nfs/home/ce/felixfdec/gem5v25_0/build/RISCV/gem5.opt
     # For gem5 v25.1
-    gem5_binary = "/nfs/home/ce/felixfdec/gem5/build/RISCV/gem5.opt"
+    gem5_binary = "/nfs/home/ce/felixfdec/gem5v25_0/build/RISCV/gem5.opt"
 
     config_script = "/nfs/home/ce/felixfdec/gem5/config-files-run-experiments/config-files/launch_fs_from_ckpt.py"
     

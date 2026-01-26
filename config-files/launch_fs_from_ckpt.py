@@ -1,6 +1,6 @@
 """ Example use: 
 ~/gem5/build/RISCV/gem5.opt \
---re --outdir=/nfs/home/ce/felixfdec/gem5/config-files-run-experiments/1-output-jobs/Splash-4/RADIX \
+-re --outdir=/nfs/home/ce/felixfdec/gem5/config-files-run-experiments/1-output-jobs/Splash-4/RADIX \
 /nfs/home/ce/felixfdec/gem5/config-files-run-experiments/config-files/launch_fs_from_ckpt.py \
 --config MediumSonicBOOM \
 --disk_image /nfs/home/ce/felixfdec/riscv-ubuntu-gem5-appsSmall.img \
