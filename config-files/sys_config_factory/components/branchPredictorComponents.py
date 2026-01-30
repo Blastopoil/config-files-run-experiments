@@ -29,11 +29,11 @@ class TAGE_L_64K(TAGE_SC_L_64KB):
         super(TAGE_L_64K, self).__init__()
         self.btb = btb
         self.ras = ras
-        self.statistical_corrector = NULL
+        self.statistical_corrector = NULL()
 
 class TAGE_SC_64K(TAGE_SC_L_64KB):
     def __init__(self, btb, ras):
         super(TAGE_SC_64K, self).__init__()
         self.btb = btb
         self.ras = ras
-        self.loop_predictor = NULL
+        self.loop_predictor = NULL()
