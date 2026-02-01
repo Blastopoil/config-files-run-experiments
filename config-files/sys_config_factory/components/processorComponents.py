@@ -29,19 +29,19 @@ class RiscvO3Core(RiscvO3CPU):
             case "MediumSonicBOOM":
                 from components.branchPredictorComponents import BTB, RAS, TAGE_simple
                 branchPred = TAGE_simple(BTB(MEDIUM_SONICBOOM_BTB_CONFIG),
-                                      RAS(MEDIUM_SONICBOOM_RAS_CONFIG))
+                                         RAS(MEDIUM_SONICBOOM_RAS_CONFIG))
             case "MediumSonicBOOM_TAGE_SC_L":
                 from components.branchPredictorComponents import BTB, RAS, TAGE_SC_L_64K
-                branchPred = TAGE_SC_L_64K(BTB(MEDIUM_SONICBOOM_BTB_CONFIG),
-                                                RAS(MEDIUM_SONICBOOM_RAS_CONFIG))
+                self.branchPred.conditionalBranchPred = TAGE_SC_L_64K(BTB(MEDIUM_SONICBOOM_BTB_CONFIG),
+                                                                      RAS(MEDIUM_SONICBOOM_RAS_CONFIG))
             case "MediumSonicBOOM_TAGE_L":
                 from components.branchPredictorComponents import BTB, RAS, TAGE_L_64K
-                branchPred = TAGE_L_64K(BTB(MEDIUM_SONICBOOM_BTB_CONFIG),
-                                              RAS(MEDIUM_SONICBOOM_RAS_CONFIG))
+                self.branchPred.conditionalBranchPred = TAGE_L_64K(BTB(MEDIUM_SONICBOOM_BTB_CONFIG),
+                                                                   RAS(MEDIUM_SONICBOOM_RAS_CONFIG))
             case "MediumSonicBOOM_TAGE_SC":
                 from components.branchPredictorComponents import BTB, RAS, TAGE_SC_64K
-                branchPred = TAGE_SC_64K(BTB(MEDIUM_SONICBOOM_BTB_CONFIG),
-                                               RAS(MEDIUM_SONICBOOM_RAS_CONFIG))
+                self.branchPred.conditionalBranchPred = TAGE_SC_64K(BTB(MEDIUM_SONICBOOM_BTB_CONFIG),
+                                                                    RAS(MEDIUM_SONICBOOM_RAS_CONFIG))
         
         # Apply any processor configuration values from proc_config
         if proc_config:

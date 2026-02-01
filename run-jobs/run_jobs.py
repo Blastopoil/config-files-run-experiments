@@ -12,8 +12,8 @@ def get_applications_by_benchmark(ckpt_base_dir):
     
     apps = []
     for item in os.listdir(ckpt_base_dir):
-        if item.startswith("ckpt-"):
-            app_name = item.replace("ckpt-", "")
+        if item.startswith("ckpt_"):
+            app_name = item.replace("ckpt_", "")
             apps.append(app_name)
     
     return sorted(apps)
@@ -29,9 +29,10 @@ def create_directory(path, clean_if_exists=False):
 
 
 def generate_sbatch_script(gem5_binary, config_script, benchmark, app, config, 
-                           output_dir, ckpt_path, disk_image, mem_size, slurm_mem_size):
+                           output_dir, mem_size, slurm_mem_size):
     """Generate an sbatch script for running simulation with specific IQ size."""
     
+    spec_number = app[:3]
     sbatch_content = f"""#!/bin/bash
 #SBATCH --partition=ce_200
 #SBATCH --nodelist=ce209
@@ -39,10 +40,11 @@ def generate_sbatch_script(gem5_binary, config_script, benchmark, app, config,
 #SBATCH --job-name={app}_{config}
 #SBATCH --output={output_dir}/slurm-%j.out
 
+cd /nfs/home/ce/felixfdec/SPEC/{app}
+
 {gem5_binary}  --debug-flags=LTage,TageSCL -re --outdir={output_dir} {config_script} \
+    --spec_number {spec_number} \
     --config {config} \
-    --ckpt_path {ckpt_path} \
-    --disk_image {disk_image} \
     --mem_size {mem_size} \
     --num_ticks 100000000000 
 """
@@ -91,16 +93,9 @@ def main():
     # For gem5 v25.0
     #gem5_binary = "/nfs/home/ce/felixfdec/gem5v25_0/build/RISCV/gem5.opt
     # For gem5 v25.1
-    gem5_binary = "/nfs/home/ce/felixfdec/gem5v25_0/build/RISCV/gem5.opt"
+    gem5_binary = "/nfs/home/ce/felixfdec/gem5/build/RISCV/gem5.opt"
 
-    config_script = "/nfs/home/ce/felixfdec/gem5/config-files-run-experiments/config-files/launch_fs_from_ckpt.py"
-    
-    # Disk images and memory sizes per benchmark
-    disk_images = {
-        "Splash-4": "/nfs/home/ce/felixfdec/riscv-ubuntu-gem5-appsSmall.img",
-        "NAS": "/nfs/home/ce/felixfdec/riscv-ubuntu-gem5-appsSmall.img",
-        "SPEC17": "/nfs/home/ce/felixfdec/riscv-ubuntu-gem5-appsSmall.img",
-    }
+    config_script = "/nfs/home/ce/felixfdec/gem5/config-files-run-experiments/config-files/launch_se_from_ckpt.py"
     
     mem_sizes = {
         "Splash-4": 2,
@@ -117,7 +112,7 @@ def main():
     ckpt_base_dirs = {
         "Splash-4": "/nfs/shared/ce/gem5/ckpts/RISCV/1core/2GB/Splash-4",
         "NAS": "/nfs/shared/ce/gem5/ckpts/RISCV/1core/2GB/NPB3.3-SER",
-        "SPEC17": "/nfs/shared/ce/gem5/ckpts/RISCV/1core/4GB/SPEC17",
+        "SPEC17": "/nfs/shared/ce/gem5/ckpts/RISCV/v25.1/syscall_emulation/1core/4GB/SPEC17",
     }
     
     # Base directory for output
@@ -129,7 +124,6 @@ def main():
     for benchmark in benchmarks:
         ckpt_base_dir = ckpt_base_dirs[benchmark]
         apps = get_applications_by_benchmark(ckpt_base_dir)
-        disk_image = disk_images[benchmark]
         mem_size = mem_sizes[benchmark]
         slurm_mem_size = slurm_mem_sizes[benchmark]
         
@@ -151,10 +145,6 @@ def main():
                     clean_if_exists=True
                 )
                 
-                # Construct checkpoint path
-                ckpt_name = f"ckpt-{app}"
-                ckpt_path = os.path.join(ckpt_base_dir, ckpt_name)
-                
                 # Generate sbatch script
                 sbatch_script = generate_sbatch_script(
                     gem5_binary,
@@ -163,8 +153,6 @@ def main():
                     app,
                     config,
                     output_dir,
-                    ckpt_path,
-                    disk_image,
                     mem_size,
                     slurm_mem_size
                 )
