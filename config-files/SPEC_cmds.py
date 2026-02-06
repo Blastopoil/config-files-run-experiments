@@ -1,5 +1,5 @@
 
-spec_base_dir = "/nfs/home/ce/felixfdec/SPEC/"
+spec_base_dir = "/nfs/shared/ce/gem5/bin/risc-v/SPEC17/"
 
 spec_app_dirs = {
     500: "500.perlbench_r/", 502: "502.gcc_r/", 503: "503.bwaves_r/",

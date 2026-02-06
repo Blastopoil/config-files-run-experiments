@@ -42,7 +42,7 @@ def generate_sbatch_script(gem5_binary, config_script, benchmark, app, config,
 
 cd /nfs/home/ce/felixfdec/SPEC/{app}
 
-{gem5_binary}  --debug-flags=LTage,TageSCL -re --outdir={output_dir} {config_script} \
+{gem5_binary}  -re --outdir={output_dir} {config_script} \
     --spec_number {spec_number} \
     --config {config} \
     --mem_size {mem_size} \
@@ -55,7 +55,7 @@ cd /nfs/home/ce/felixfdec/SPEC/{app}
     
     return script_path
 
-
+#--debug-flags=LTage,TageSCL
 def submit_job(script_path):
     """Submit the job using sbatch and return job ID."""
     result = subprocess.run(["sbatch", script_path], capture_output=True, text=True)
@@ -72,8 +72,15 @@ def main():
     parser = argparse.ArgumentParser(description="Run gem5 simulations with divided IQ for different benchmarks.")
     parser.add_argument(
         "--benchmark", 
-        choices=["Splash-4", "NAS", "SPEC17", "ALL"], 
+        choices=["SPEC17"], 
         help="Benchmark to run (or ALL for all benchmarks)"
+    )
+    spec_choices = [ 502, 503, 505, 507, 508, 510, 511, 519, 520, 521, 523, 
+                     526, 527, 531, 541, 544, 548, 549, 554, 557 ]
+    parser.add_argument(
+        "--spec_number",
+        nargs='?', 
+        help=f"SPEC17 app identification's tag: {list(spec_choices)}"
     )
     parser.add_argument(
         "--config", 
@@ -87,9 +94,10 @@ def main():
     args = parser.parse_args()
     
     benchmarks = [args.benchmark] if args.benchmark != "ALL" else ["Splash-4", "NAS", "SPEC17"]
+    spec_apps = [int(x) for x in args.spec_number.split(',')] if args.spec_number else spec_choices
     configs = []
     configs.append(args.config) if args.config else configs.extend(["MediumSonicBOOM", "MediumSonicBOOM_TAGE_SC_L"])
-    
+
     # For gem5 v25.0
     #gem5_binary = "/nfs/home/ce/felixfdec/gem5v25_0/build/RISCV/gem5.opt
     # For gem5 v25.1
@@ -98,20 +106,14 @@ def main():
     config_script = "/nfs/home/ce/felixfdec/gem5/config-files-run-experiments/config-files/launch_se_from_ckpt.py"
     
     mem_sizes = {
-        "Splash-4": 2,
-        "NAS": 2,
         "SPEC17": 4,
     }
 
     slurm_mem_sizes = {
-        "Splash-4": "2G",
-        "NAS": "2G",
         "SPEC17": "5G",
     }
     
     ckpt_base_dirs = {
-        "Splash-4": "/nfs/shared/ce/gem5/ckpts/RISCV/1core/2GB/Splash-4",
-        "NAS": "/nfs/shared/ce/gem5/ckpts/RISCV/1core/2GB/NPB3.3-SER",
         "SPEC17": "/nfs/shared/ce/gem5/ckpts/RISCV/v25.1/syscall_emulation/1core/4GB/SPEC17",
     }
     
@@ -124,6 +126,7 @@ def main():
     for benchmark in benchmarks:
         ckpt_base_dir = ckpt_base_dirs[benchmark]
         apps = get_applications_by_benchmark(ckpt_base_dir)
+        print(apps)
         mem_size = mem_sizes[benchmark]
         slurm_mem_size = slurm_mem_sizes[benchmark]
         
@@ -139,6 +142,10 @@ def main():
         for config in configs:
             for app in apps:
                 
+                if (int(app[:3]) not in spec_apps) and benchmark == "SPEC17":
+                    print(f"Skipping {app} as it's not in the specified list of SPEC17 apps.")
+                    continue
+
                 # Create output directory: config/benchmark/app/
                 output_dir = create_directory(
                     os.path.join(base_output_dir, config, benchmark, app),

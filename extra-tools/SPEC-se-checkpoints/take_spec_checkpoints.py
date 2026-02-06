@@ -87,7 +87,7 @@ def handle_workbegin():
 
 def exit_event_handler():
     print("M5 Exit event")
-    yield True
+    yield False
 
 # SPEC application configuration
 

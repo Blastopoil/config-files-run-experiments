@@ -98,7 +98,13 @@ if not ckpt_path.exists():
 print(f"Restoring from checkpoint path: {ckpt_path}")
 
 # Event handlers
-total_works = 1
+if (args.spec_number == 520 or args.spec_number == 531 or args.spec_number == 557):
+    total_works = 10
+elif (args.spec_number == 526 ):
+    total_works = 240
+else:
+    total_works = 1
+
 def handle_workend():
     num_works = 0
     while True:
