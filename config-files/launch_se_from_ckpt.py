@@ -2,6 +2,7 @@
 cd ~/SPEC/507.cactuBSSN_r/ (or any other folder of the SPEC app you are going to use)
 
 ~/gem5/build/RISCV/gem5.opt \
+--outdir=/nfs/home/ce/felixfdec/gem5/config-files-run-experiments/improv-output \
 /nfs/home/ce/felixfdec/gem5/config-files-run-experiments/config-files/launch_se_from_ckpt.py \
 --spec_number 507 \
 --config MediumSonicBOOM_TAGE_SC_L \
@@ -9,6 +10,8 @@ cd ~/SPEC/507.cactuBSSN_r/ (or any other folder of the SPEC app you are going to
 """
 # To enable debug flags, add the following gem5 option:
 # --debug-flags=LTage,TageSCL
+
+# --outdir=/nfs/home/ce/felixfdec/gem5/config-files-run-experiments/improv-output \
 
 import argparse
 from pathlib import Path
@@ -40,7 +43,7 @@ parser.add_argument(
     help=f"SPEC17 app identification's tag: {list(spec_choices)}"
 )
 
-config_choices = ["MediumSonicBOOM", "MediumSonicBOOM_TAGE_SC_L", "MediumSonicBOOM_TAGE_L", "MediumSonicBOOM_TAGE_SC"]
+config_choices = ["MediumSonicBOOM_TAGE_SC_L", "MediumSonicBOOM_TAGE_L", "MediumSonicBOOM_TAGE_SC"]
 parser.add_argument(
     "--config",
     choices=config_choices,
@@ -68,9 +71,6 @@ args = parser.parse_args()
 mem_size_str = f"{args.mem_size}GiB"
 
 match (args.config):
-    case "MediumSonicBOOM":
-        from sys_config_factory.factories import medium_sonicboom_factory
-        sys_config = medium_sonicboom_factory(mem_size_str)
     case "MediumSonicBOOM_TAGE_SC_L":
         from sys_config_factory.factories import medium_sonicboom_tage_sc_l_factory
         sys_config = medium_sonicboom_tage_sc_l_factory(mem_size_str)

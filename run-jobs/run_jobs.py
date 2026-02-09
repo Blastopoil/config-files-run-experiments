@@ -84,8 +84,7 @@ def main():
     )
     parser.add_argument(
         "--config", 
-        choices=["MediumSonicBOOM",
-                 "MediumSonicBOOM_TAGE_SC_L",
+        choices=["MediumSonicBOOM_TAGE_SC_L",
                  "MediumSonicBOOM_TAGE_L", 
                  "MediumSonicBOOM_TAGE_SC"],
         required=True,
@@ -96,7 +95,7 @@ def main():
     benchmarks = [args.benchmark] if args.benchmark != "ALL" else ["Splash-4", "NAS", "SPEC17"]
     spec_apps = [int(x) for x in args.spec_number.split(',')] if args.spec_number else spec_choices
     configs = []
-    configs.append(args.config) if args.config else configs.extend(["MediumSonicBOOM", "MediumSonicBOOM_TAGE_SC_L"])
+    configs.append(args.config) if args.config else configs.extend(["MediumSonicBOOM_TAGE_SC_L"])
 
     # For gem5 v25.0
     #gem5_binary = "/nfs/home/ce/felixfdec/gem5v25_0/build/RISCV/gem5.opt

@@ -1,15 +1,14 @@
 from m5.objects import (
     RiscvO3CPU,
-    BiModeBP, TAGE_SC_L_8KB,
 )
 from gem5.isas import ISA
 from gem5.components.processors.base_cpu_core import BaseCPUCore
 from gem5.components.processors.base_cpu_processor import BaseCPUProcessor
 
-#PROCESADOR
-#El core con las funcionalidades que nos interesan
+#PROCESSOR
+# The core with the functionalities that interest us
 class RiscvO3Core(RiscvO3CPU):
-    def __init__(self, bp, proc_config=None):
+    def __init__(self, proc_config=None):
         """
         RiscvO3Core that accepts an optional proc_config dict (like those in
         `configs/data/data_proc.py`). If provided, keys from proc_config are set
@@ -20,28 +19,6 @@ class RiscvO3Core(RiscvO3CPU):
             proc_config: optional dict with processor parameters to apply
         """
         super().__init__()
-        # Set branch predictor
-        #TODO: Por alguna razón no me deja asignar self.bp a un predictor de saltos creado desde otro modulo de Python,
-        #      solo me deja asignarle uno creado desde este modulo. Intentar hacer que se pueda crear desde fuera
-        
-        from data.medium_sonicboom_data import MEDIUM_SONICBOOM_BTB_CONFIG, MEDIUM_SONICBOOM_RAS_CONFIG
-        match (bp):
-            case "MediumSonicBOOM":
-                from components.branchPredictorComponents import BTB, RAS, TAGE_simple
-                branchPred = TAGE_simple(BTB(MEDIUM_SONICBOOM_BTB_CONFIG),
-                                         RAS(MEDIUM_SONICBOOM_RAS_CONFIG))
-            case "MediumSonicBOOM_TAGE_SC_L":
-                from components.branchPredictorComponents import BTB, RAS, TAGE_SC_L_64K
-                self.branchPred.conditionalBranchPred = TAGE_SC_L_64K(BTB(MEDIUM_SONICBOOM_BTB_CONFIG),
-                                                                      RAS(MEDIUM_SONICBOOM_RAS_CONFIG))
-            case "MediumSonicBOOM_TAGE_L":
-                from components.branchPredictorComponents import BTB, RAS, TAGE_L_64K
-                self.branchPred.conditionalBranchPred = TAGE_L_64K(BTB(MEDIUM_SONICBOOM_BTB_CONFIG),
-                                                                   RAS(MEDIUM_SONICBOOM_RAS_CONFIG))
-            case "MediumSonicBOOM_TAGE_SC":
-                from components.branchPredictorComponents import BTB, RAS, TAGE_SC_64K
-                self.branchPred.conditionalBranchPred = TAGE_SC_64K(BTB(MEDIUM_SONICBOOM_BTB_CONFIG),
-                                                                    RAS(MEDIUM_SONICBOOM_RAS_CONFIG))
         
         # Apply any processor configuration values from proc_config
         if proc_config:
@@ -55,14 +32,14 @@ class RiscvO3Core(RiscvO3CPU):
                     # (keeps behavior robust for unexpected keys)
                     #continue
 
-#Wrapper del core porque gem5 lo demanda
+# Wrapper of the core because gem5 says it so
 class RiscvO3StdCore(BaseCPUCore):
-    def __init__(self, bp, proc_config=None):
-        core = RiscvO3Core(bp, proc_config=proc_config)
+    def __init__(self, proc_config=None):
+        core = RiscvO3Core(proc_config=proc_config)
         super().__init__(core, ISA.RISCV)
 
-#Procesador que permite tener varios cores y además se necesita como wrapper de procesador
+# Processor that allows for multiple cores and also serves as a wrapper for the processor
 class RiscvO3Processor(BaseCPUProcessor):
-    def __init__(self, bp, proc_config=None, num_cores=1):
-        cores = [RiscvO3StdCore(bp, proc_config=proc_config) for _ in range(num_cores)]
+    def __init__(self, proc_config=None, num_cores=1):
+        cores = [RiscvO3StdCore(proc_config=proc_config) for _ in range(num_cores)]
         super().__init__(cores)
