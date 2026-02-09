@@ -5,13 +5,12 @@ cd ~/SPEC/507.cactuBSSN_r/ (or any other folder of the SPEC app you are going to
 --outdir=/nfs/home/ce/felixfdec/gem5/config-files-run-experiments/improv-output \
 /nfs/home/ce/felixfdec/gem5/config-files-run-experiments/config-files/launch_se_from_ckpt.py \
 --spec_number 507 \
---config MediumSonicBOOM_TAGE_SC_L \
+--config BigO3 \
+--bp TAGE_SC_L \
 --mem_size 4
 """
 # To enable debug flags, add the following gem5 option:
 # --debug-flags=LTage,TageSCL
-
-# --outdir=/nfs/home/ce/felixfdec/gem5/config-files-run-experiments/improv-output \
 
 import argparse
 from pathlib import Path
@@ -34,7 +33,6 @@ parser = argparse.ArgumentParser(
 
 spec_choices = [ 500, 502, 503, 505, 507, 508, 510, 511, 519, 520, 521, 523, 
                  525, 526, 527, 531, 538, 541, 544, 548, 549, 554, 557 ]
-
 parser.add_argument(
     "--spec_number",
     choices=spec_choices,
@@ -43,7 +41,7 @@ parser.add_argument(
     help=f"SPEC17 app identification's tag: {list(spec_choices)}"
 )
 
-config_choices = ["MediumSonicBOOM_TAGE_SC_L", "MediumSonicBOOM_TAGE_L", "MediumSonicBOOM_TAGE_SC", "SmallO3", "BigO3"]
+config_choices = ["MediumSonicBOOM", "SmallO3", "BigO3"]
 parser.add_argument(
     "--config",
     choices=config_choices,
@@ -52,9 +50,18 @@ parser.add_argument(
     required=True,
 )
 
+bp_choices = ["TAGE_SC_L", "TAGE_SC", "TAGE_L", "LocalBP"]
+parser.add_argument(
+    "--bp",
+    choices=bp_choices,
+    help=f"configuration to use of the following: {list(bp_choices)}",
+    type=str,
+    required=True,
+)
+
 parser.add_argument(
     "--mem_size",
-    choices=[2, 4],
+    choices=[4],
     type=int,
     required=True,
     help="Memory size in GiB (must match checkpoint's path)",
@@ -70,22 +77,31 @@ parser.add_argument(
 args = parser.parse_args()
 mem_size_str = f"{args.mem_size}GiB"
 
+match (args.bp):
+    case "TAGE_SC_L":
+        from sys_config_factory.factories import tage_sc_l_factory
+        bp_factory = tage_sc_l_factory
+    case "TAGE_SC":
+        from sys_config_factory.factories import tage_sc_factory
+        bp_factory = tage_sc_factory
+    case "TAGE_L":
+        from sys_config_factory.factories import tage_l_factory
+        bp_factory = tage_l_factory
+    case "LocalBP":
+        from sys_config_factory.factories import localbp_factory
+        bp_factory = localbp_factory
+    
+
 match (args.config):
-    case "MediumSonicBOOM_TAGE_SC_L":
-        from sys_config_factory.factories import medium_sonicboom_tage_sc_l_factory
-        sys_config = medium_sonicboom_tage_sc_l_factory(mem_size_str)
-    case "MediumSonicBOOM_TAGE_L":
-        from sys_config_factory.factories import medium_sonicboom_tage_l_factory
-        sys_config = medium_sonicboom_tage_l_factory(mem_size_str)
-    case "MediumSonicBOOM_TAGE_SC":
-        from sys_config_factory.factories import medium_sonicboom_tage_sc_factory
-        sys_config = medium_sonicboom_tage_sc_factory(mem_size_str)
+    case "MediumSonicBOOM":
+        from sys_config_factory.factories import medium_sonicboom_factory
+        sys_config = medium_sonicboom_factory(mem_size_str, bp_factory)
     case "SmallO3":
         from sys_config_factory.factories import small_O3_factory
-        sys_config = small_O3_factory(mem_size_str)
+        sys_config = small_O3_factory(mem_size_str, bp_factory)
     case "BigO3":
-        from sys_config_factory.factories import big_O3_factory
-        sys_config = big_O3_factory(mem_size_str)
+        from sys_config_factory.factories import big_O3_factory, localbp_factory
+        sys_config = big_O3_factory(mem_size_str, bp_factory)
 
 # Board
 board = RiscvBoard(
@@ -131,7 +147,6 @@ def exit_event_handler():
     yield True
 
 # SPEC application configuration
-
 spec_app_dir = spec_base_dir + spec_app_dirs[args.spec_number]
 binary_path = spec_app_dir + spec_app_binaries[args.spec_number]
 
