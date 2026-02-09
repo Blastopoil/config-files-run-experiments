@@ -1,23 +1,23 @@
 from m5.objects import (
     BadAddr,
     Cache,
+    StridePrefetcher,
     SystemXBar,
     L2XBar,
     SubSystem,
 )
 
 from gem5.components.boards.abstract_board import AbstractBoard
-from gem5.components.cachehierarchies.classic.caches.l1dcache import L1DCache
-from gem5.components.cachehierarchies.classic.caches.l1icache import L1ICache
 from gem5.components.cachehierarchies.classic.caches.l2cache import L2Cache
 from gem5.components.cachehierarchies.classic.abstract_classic_cache_hierarchy import AbstractClassicCacheHierarchy
 from gem5.components.cachehierarchies.classic.caches.mmu_cache import MMUCache
-from gem5.components.memory.multi_channel import DualChannelDDR4_2400
 from gem5.isas import ISA
 
-#Creacion de las caches individuales DE MOMENTO NO LO USO PARA NADA
-class MiCache(Cache):  # Abstract
-    def __init__(self, size, assoc, tag_latency, data_latency, response_latency):
+# Create an L1 cache
+class _L1Cache(Cache):
+    def __init__(
+        self, size, assoc, tag_latency, data_latency, response_latency
+    ):
         super().__init__()
         self.size = size
         self.assoc = assoc
@@ -25,54 +25,123 @@ class MiCache(Cache):  # Abstract
         self.data_latency = data_latency
         self.response_latency = response_latency
 
-class MiL1Cache(MiCache):
-    def __init__(self, size="32kB"):
-        super().__init__(size)
+# Subclasses of L1 cache: Instruction and Data caches
+class _L1ICache(_L1Cache):
+    def __init__(
+        self,
+        size,
+        assoc,
+        tag_latency,
+        data_latency,
+        response_latency,
+    ):
+        super().__init__(
+            size, assoc, tag_latency, data_latency, response_latency
+        )
+        self.is_read_only = True
+        
+        self.mshrs = 16
+        self.tgts_per_mshr = 8
 
-class _L1DCache(L1DCache):
-    def __init__(self, size="32kB"):
-        super().__init__(size)
 
-class _L1ICache(L1ICache):
-    def __init__(self, size="32kB"):
-        super().__init__(size)
+class _L1DCache(_L1Cache):
+    def __init__(
+        self, size, assoc, tag_latency, data_latency, response_latency, writeback_clean
+    ):
+        super().__init__(
+            size, assoc, tag_latency, data_latency, response_latency
+        )
+        self.writeback_clean = writeback_clean
+        self.mshrs = 32 
+        self.tgts_per_mshr = 16
+        self.write_buffers = 8
 
-class _L2Cache(L2Cache):
-    def __init__(self, size="1MB"):
-        super().__init__(size)
-
-class _L3Cache(Cache):
-    def __init__(self, size="4MB", assoc=32):
+# Create an L2 cache
+class _L2Cache(Cache):
+    def __init__(
+        self, size, assoc, tag_latency, data_latency, response_latency
+    ):
         super().__init__()
         self.size = size
         self.assoc = assoc
-        self.tag_latency = 20
-        self.data_latency = 20
-        self.response_latency = 1
-        self.mshrs = 20
-        self.tgts_per_mshr = 12
+        self.tag_latency = tag_latency
+        self.data_latency = data_latency
+        self.response_latency = response_latency
+        self.mshrs = 32
+        self.tgts_per_mshr = 16
+        self.prefetcher = StridePrefetcher(degree=1, latency=1, prefetch_on_access=True)
+
+
+# Create an L3 cache
+class _L3Cache(Cache):
+    def __init__(
+        self, size, assoc, tag_latency, data_latency, response_latency
+    ):
+        super().__init__()
+        self.size = size
+        self.assoc = assoc
+        self.tag_latency = tag_latency
+        self.data_latency = data_latency
+        self.response_latency = response_latency
+        self.mshrs = 32
+        self.tgts_per_mshr = 16
         self.writeback_clean = False
         self.clusivity = "mostly_incl"
+        self.prefetcher = StridePrefetcher(degree=8, latency=1, prefetch_on_access=True)
 
 #Creates the Cache Hierarchy
 class ThreeLevelCacheHierarchy(AbstractClassicCacheHierarchy):
     def __init__(
         self,
+        l1i_assoc,
         l1i_size,
+        l1i_tag_latency,
+        l1i_data_latency,
+        l1i_response_latency,
+        l1d_assoc,
         l1d_size,
+        l1d_tag_latency,
+        l1d_data_latency,
+        l1d_response_latency,
+        l1d_writeback_clean,
+        l2_assoc,
         l2_size,
+        l2_tag_latency,
+        l2_data_latency,
+        l2_response_latency,
+        l3_assoc,
         l3_size,
+        l3_tag_latency,
+        l3_data_latency,
+        l3_response_latency,
     ):
         AbstractClassicCacheHierarchy.__init__(self)
 
         # Save the sizes and latencies to use later.
         self._l1i_size = l1i_size
+        self._l1i_assoc = l1i_assoc
+        self._l1i_tag_latency = l1i_tag_latency
+        self._l1i_data_latency = l1i_data_latency
+        self._l1i_response_latency = l1i_response_latency
 
         self._l1d_size = l1d_size
+        self._l1d_assoc = l1d_assoc
+        self._l1d_tag_latency = l1d_tag_latency
+        self._l1d_data_latency = l1d_data_latency
+        self._l1d_response_latency = l1d_response_latency
+        self._l1d_writeback_clean = l1d_writeback_clean
 
         self._l2_size = l2_size
+        self._l2_assoc = l2_assoc
+        self._l2_tag_latency = l2_tag_latency
+        self._l2_data_latency = l2_data_latency
+        self._l2_response_latency = l2_response_latency
 
         self._l3_size = l3_size
+        self._l3_assoc = l3_assoc
+        self._l3_tag_latency = l3_tag_latency
+        self._l3_data_latency = l3_data_latency
+        self._l3_response_latency = l3_response_latency
 
         #Use a high-bandwidth system crossbar
         self.membus = SystemXBar(width=64)
@@ -107,7 +176,13 @@ class ThreeLevelCacheHierarchy(AbstractClassicCacheHierarchy):
             for core in board.get_processor().get_cores()
         ]
 
-        self.l3_cache = _L3Cache(size=self._l3_size)
+        self.l3_cache = _L3Cache(
+            size=self._l3_size,
+            assoc=self._l3_assoc,
+            tag_latency=self._l3_tag_latency,
+            data_latency=self._l3_data_latency,
+            response_latency=self._l3_response_latency,
+        )
 
         # Connect the L3 cache to the system crossbar and L3 crossbar
         self.l3_cache.mem_side = self.membus.cpu_side_ports
@@ -121,9 +196,29 @@ class ThreeLevelCacheHierarchy(AbstractClassicCacheHierarchy):
         Create a core cluster with the given core.
         """
         cluster = SubSystem()
-        cluster.l1dcache = _L1DCache(size=self._l1d_size)
-        cluster.l1icache = _L1ICache(size=self._l1i_size)
-        cluster.l2cache = _L2Cache(size=self._l2_size)
+        cluster.l1dcache = _L1DCache(
+            size=self._l1d_size,
+            assoc=self._l1d_assoc,
+            tag_latency=self._l1d_tag_latency,
+            data_latency=self._l1d_data_latency,
+            response_latency=self._l1d_response_latency,
+            writeback_clean=self._l1d_writeback_clean,
+
+        )
+        cluster.l1icache = _L1ICache(
+            size=self._l1i_size,
+            assoc=self._l1i_assoc,
+            tag_latency=self._l1i_tag_latency,
+            data_latency=self._l1i_data_latency,
+            response_latency=self._l1i_response_latency,
+        )
+        cluster.l2cache = _L2Cache(
+            size=self._l2_size,
+            assoc=self._l2_assoc,
+            tag_latency=self._l2_tag_latency,
+            data_latency=self._l2_data_latency,
+            response_latency=self._l2_response_latency,
+        )
 
         #FS
         cluster.iptw_cache = MMUCache(size="8KiB", writeback_clean=False)
@@ -171,13 +266,4 @@ class ThreeLevelCacheHierarchy(AbstractClassicCacheHierarchy):
             addr_ranges=board.mem_ranges,
         )
         self.iocache.mem_side = self.membus.cpu_side_ports
-        self.iocache.cpu_side = board.get_mem_side_coherent_io_port()
-
-example_cache_hierarchy = ThreeLevelCacheHierarchy(
-    l1i_size = "32kB",
-    l1d_size = "32kB",
-    l2_size = "1MB",
-    l3_size = "4MB",)
-
-#Creación de la jerarquía de memoria
-example_memory_hierarchy = DualChannelDDR4_2400(size="4GiB")
+        self.iocache.cpu_side = board.get_mem_side_coherent_io_port

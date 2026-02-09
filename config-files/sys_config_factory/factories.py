@@ -14,11 +14,30 @@ def medium_sonicboom_tage_sc_l_factory(memory_size):
         raise ValueError("memory_size must be specified for medium_sonicboom_board_factory")
 
     from components.memoryComponents import ThreeLevelCacheHierarchy
-    cache_hierarchy = ThreeLevelCacheHierarchy(
-        l1i_size = "32kB",
-        l1d_size = "32kB",
-        l2_size = "1MB",
-        l3_size = "4MB",)
+    cache_hierarchy_data = {
+        "l1i_assoc": 4,
+        "l1i_size": "32KiB",
+        "l1i_tag_latency": 1,
+        "l1i_data_latency": 1,
+        "l1i_response_latency": 1,
+        "l1d_assoc": 4,
+        "l1d_size": "32KiB",
+        "l1d_tag_latency": 1,
+        "l1d_data_latency": 2,
+        "l1d_response_latency": 1,
+        "l1d_writeback_clean": True,
+        "l2_assoc": 8,
+        "l2_size": "256KiB",
+        "l2_tag_latency": 3,
+        "l2_data_latency": 6,
+        "l2_response_latency": 3,
+        "l3_assoc": 16,
+        "l3_size": "2MiB",
+        "l3_tag_latency": 10,
+        "l3_data_latency": 20,
+        "l3_response_latency": 10,
+    }
+    cache_hierarchy = ThreeLevelCacheHierarchy(**cache_hierarchy_data)
 
     from gem5.components.memory.multi_channel import DualChannelDDR4_2400
     memory_hierarchy = DualChannelDDR4_2400(size=memory_size)
@@ -53,11 +72,30 @@ def medium_sonicboom_tage_l_factory(memory_size):
         raise ValueError("memory_size must be specified for medium_sonicboom_board_factory")
 
     from components.memoryComponents import ThreeLevelCacheHierarchy
-    cache_hierarchy = ThreeLevelCacheHierarchy(
-        l1i_size = "32kB",
-        l1d_size = "32kB",
-        l2_size = "1MB",
-        l3_size = "4MB",)
+    cache_hierarchy_data = {
+        "l1i_assoc": 4,
+        "l1i_size": "32KiB",
+        "l1i_tag_latency": 1,
+        "l1i_data_latency": 1,
+        "l1i_response_latency": 1,
+        "l1d_assoc": 4,
+        "l1d_size": "32KiB",
+        "l1d_tag_latency": 1,
+        "l1d_data_latency": 2,
+        "l1d_response_latency": 1,
+        "l1d_writeback_clean": True,
+        "l2_assoc": 8,
+        "l2_size": "256KiB",
+        "l2_tag_latency": 3,
+        "l2_data_latency": 6,
+        "l2_response_latency": 3,
+        "l3_assoc": 16,
+        "l3_size": "2MiB",
+        "l3_tag_latency": 10,
+        "l3_data_latency": 20,
+        "l3_response_latency": 10,
+    }
+    cache_hierarchy = ThreeLevelCacheHierarchy(**cache_hierarchy_data)
 
     from gem5.components.memory.multi_channel import DualChannelDDR4_2400
     memory_hierarchy = DualChannelDDR4_2400(size=memory_size)
@@ -92,11 +130,30 @@ def medium_sonicboom_tage_sc_factory(memory_size):
         raise ValueError("memory_size must be specified for medium_sonicboom_board_factory")
 
     from components.memoryComponents import ThreeLevelCacheHierarchy
-    cache_hierarchy = ThreeLevelCacheHierarchy(
-        l1i_size = "32kB",
-        l1d_size = "32kB",
-        l2_size = "1MB",
-        l3_size = "4MB",)
+    cache_hierarchy_data = {
+        "l1i_assoc": 4,
+        "l1i_size": "32KiB",
+        "l1i_tag_latency": 1,
+        "l1i_data_latency": 1,
+        "l1i_response_latency": 1,
+        "l1d_assoc": 4,
+        "l1d_size": "32KiB",
+        "l1d_tag_latency": 1,
+        "l1d_data_latency": 2,
+        "l1d_response_latency": 1,
+        "l1d_writeback_clean": True,
+        "l2_assoc": 8,
+        "l2_size": "256KiB",
+        "l2_tag_latency": 3,
+        "l2_data_latency": 6,
+        "l2_response_latency": 3,
+        "l3_assoc": 16,
+        "l3_size": "2MiB",
+        "l3_tag_latency": 10,
+        "l3_data_latency": 20,
+        "l3_response_latency": 10,
+    }
+    cache_hierarchy = ThreeLevelCacheHierarchy(**cache_hierarchy_data)
 
     from gem5.components.memory.multi_channel import DualChannelDDR4_2400
     memory_hierarchy = DualChannelDDR4_2400(size=memory_size)
