@@ -43,7 +43,7 @@ parser.add_argument(
     help=f"SPEC17 app identification's tag: {list(spec_choices)}"
 )
 
-config_choices = ["MediumSonicBOOM_TAGE_SC_L", "MediumSonicBOOM_TAGE_L", "MediumSonicBOOM_TAGE_SC"]
+config_choices = ["MediumSonicBOOM_TAGE_SC_L", "MediumSonicBOOM_TAGE_L", "MediumSonicBOOM_TAGE_SC", "SmallO3", "BigO3"]
 parser.add_argument(
     "--config",
     choices=config_choices,
@@ -80,6 +80,12 @@ match (args.config):
     case "MediumSonicBOOM_TAGE_SC":
         from sys_config_factory.factories import medium_sonicboom_tage_sc_factory
         sys_config = medium_sonicboom_tage_sc_factory(mem_size_str)
+    case "SmallO3":
+        from sys_config_factory.factories import small_O3_factory
+        sys_config = small_O3_factory(mem_size_str)
+    case "BigO3":
+        from sys_config_factory.factories import big_O3_factory
+        sys_config = big_O3_factory(mem_size_str)
 
 # Board
 board = RiscvBoard(
