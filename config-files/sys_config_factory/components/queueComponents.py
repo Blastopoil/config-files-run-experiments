@@ -1,4 +1,7 @@
-from m5.objects import IQUnit, FUPool, FUDesc, OpDesc
+from m5.objects import (
+    IQUnit, FUPool, FUDesc, OpDesc
+)
+from m5.objects.BaseMinorCPU import *
 
 def _simd_misc_ops():
     """Common SIMD/misc operations added to many ports."""
@@ -244,3 +247,71 @@ class bigO3_IQ(IQUnit):
         self.numEntries = numEntries
     fuPool = _FUP_BigO3()
 #----------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------------------------------------
+# Configuracion CVA6S+
+# Reusando los puertos de small con la misma funcionalidad
+
+# class PMem_CVA6S(FUDesc):
+#     opList = [
+#         OpDesc(opClass="MemRead"),
+#         OpDesc(opClass="FloatMemRead"),
+#         OpDesc(opClass="MemWrite"),
+#         OpDesc(opClass="FloatMemWrite"),
+#     ]
+#     count = 1
+# No funciona!!! No se pueden hacer de esta forma para superescalares
+# class FUP_CVA6S(FUPool):
+#     FUList = [PMem_CVA6S(), P0_Small(), P1_Small(), P2_Small(), P6_Small(), PX_Small()]
+
+# Configuracion CVA6S+ estilo minorCPU ------------------------------------------------------------
+class CVA6S_MemFU(MinorDefaultMemFU):
+    opClasses = minorMakeOpClassSet(["MemRead", "FloatMemRead", "MemWrite", "FloatMemWrite"])
+
+class CVA6S_IntFU(MinorDefaultIntFU):
+    opLat = 1
+
+class CVA6S_ExtIntFU(MinorDefaultIntDivFU):
+    opClasses = minorMakeOpClassSet(["IntAlu", "IntMult", "IntDiv"])
+    opLat = 3
+
+class CVA6S_FloatFU(MinorDefaultFloatSimdFU):
+    opClasses = minorMakeOpClassSet([
+        "FloatAdd", "FloatCmp", "FloatCvt", "FloatMult", "FloatMultAcc", 
+        "FloatDiv", "FloatMisc", "FloatSqrt", 
+    ])
+    opLat = 3
+
+class CVA6S_XFUPool(MinorFU):
+    opClasses = minorMakeOpClassSet([
+        "SimdAdd", "SimdAddAcc", 
+        "SimdAlu", "SimdCmp", "SimdCvt", "SimdMult", "SimdMultAcc", "SimdShift",
+        "SimdShiftAcc", "SimdFloatAdd", "SimdFloatAlu", "SimdFloatCmp", 
+        "SimdFloatCvt", "SimdFloatMult", "SimdFloatMultAcc", "SimdDiv", 
+        "SimdFloatDiv", "SimdSqrt", "SimdFloatSqrt",
+        "SimdMisc", "SimdFloatMisc", "SimdFloatMatMultAcc", "SimdReduceAdd",
+        "SimdReduceAlu", "SimdReduceCmp", "SimdFloatReduceAdd", 
+        "SimdFloatReduceCmp", "SimdAes", "SimdAesMix", "SimdSha1Hash", 
+        "SimdSha1Hash2", "SimdSha256Hash", "SimdSha256Hash2", "SimdShaSigma2",
+        "SimdShaSigma3", "SimdPredAlu", "Matrix", "MatrixMov", "MatrixOP",
+        #"IprAccess", 
+        "InstPrefetch", "SimdUnitStrideLoad", 
+        "SimdUnitStrideStore", "SimdUnitStrideMaskLoad", 
+        "SimdUnitStrideMaskStore", "SimdStridedLoad", "SimdStridedStore",
+        "SimdIndexedLoad", "SimdIndexedStore", "SimdWholeRegisterLoad",
+        "SimdWholeRegisterStore", "SimdUnitStrideFaultOnlyFirstLoad",
+        "SimdUnitStrideSegmentedLoad", "SimdUnitStrideSegmentedStore",
+        "SimdExt", "SimdFloatExt", "SimdConfig"
+    ])
+    opLat = 6
+
+class CVA6S_FUPool(MinorFUPool):
+    funcUnits = [
+        CVA6S_MemFU(),
+        CVA6S_IntFU(),
+        CVA6S_IntFU(),
+        CVA6S_ExtIntFU(),
+        MinorDefaultPredFU(),
+        CVA6S_FloatFU(),
+        CVA6S_XFUPool(),
+    ]

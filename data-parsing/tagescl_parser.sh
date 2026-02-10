@@ -33,7 +33,7 @@ if [ ! -d "$OUTPUT_DEST_DIR" ]; then
 fi
 
 # --- Initialize Output File ---
-echo "App,IPC,Sim_Is,Exec_Is,total_cond_predicts,wrong_cond_predicts,total_bp_mispredicts" > "$OUTPUT_FILE"
+echo "App,IPC,Sim_Is,Exec_Is,total_cond_predicts,wrong_cond_predicts,loop_pred_used,loop_pred_correct,loop_pred_wrong,sc_correct,sc_wrong" > "$OUTPUT_FILE"
 
 echo "------------------------------------------------"
 echo "Reading from:     $DATA_SRC_DIR"
@@ -55,9 +55,6 @@ find "$DATA_SRC_DIR" -maxdepth 1 -mindepth 1 -type d | sort | while read app_dir
         # 3. Extract Metrics
         # Extract IPC
         sim_ipc=$(grep "board.processor.cores.core.ipc" "$stats_file" | tail -n 1 | awk '{print $2}')
-
-        # Extract number of instructions
-        sim_Is=$(grep "simInsts" "$stats_file" | tail -n 1 | awk '{print $2}')
         
         # Extract total conditional branch predictions
         sim_total_cond_preds=$(grep "board.processor.cores.core.branchPred.condPredicted" "$stats_file" | tail -n 1 | awk '{print $2}')
@@ -65,19 +62,33 @@ find "$DATA_SRC_DIR" -maxdepth 1 -mindepth 1 -type d | sort | while read app_dir
         # Extract conditional branch mispredictions
         sim_incorrect_cond_preds=$(grep "board.processor.cores.core.branchPred.condIncorrect" "$stats_file" | tail -n 1 | awk '{print $2}')
 
-        # Extract total branch commited mispredicts
-        sim_total_bp_mispredicts=$(grep "mispredictDueToPredictor_0::total" "$stats_file" | tail -n 1 | awk '{print $2}')
-        
+        #Extract component specific data
+        sim_loop_pred_used=$(grep "board.processor.cores.core.branchPred.conditionalBranchPred.loop_predictor.used" "$stats_file" | tail -n 1 | awk '{print $2}')
+        sim_loop_pred_correct=$(grep "board.processor.cores.core.branchPred.conditionalBranchPred.loop_predictor.correct" "$stats_file" | tail -n 1 | awk '{print $2}')
+        sim_loop_pred_wrong=$(grep "board.processor.cores.core.branchPred.conditionalBranchPred.loop_predictor.wrong" "$stats_file" | tail -n 1 | awk '{print $2}')
+
+        sim_sc_correct=$(grep "board.processor.cores.core.branchPred.conditionalBranchPred.statistical_corrector.correct" "$stats_file" | tail -n 1 | awk '{print $2}')
+        sim_sc_wrong=$(grep "board.processor.cores.core.branchPred.conditionalBranchPred.statistical_corrector.wrong" "$stats_file" | tail -n 1 | awk '{print $2}')
+
+        # Extract number of instructions
+        sim_Is=$(grep "simInsts" "$stats_file" | tail -n 1 | awk '{print $2}')
+        exec_Is=$(grep "board.processor.cores.core.executeStats0.numInsts" "$stats_file" | tail -n 1 | awk '{print $2}')
+
         # Handle missing values
         sim_ipc=${sim_ipc:-N/A}
-        sim_Is=${sim_Is:-N/A}
         sim_total_cond_preds=${sim_total_cond_preds:-N/A}
         sim_incorrect_cond_preds=${sim_incorrect_cond_preds:-N/A}
-        sim_total_bp_mispredicts=${sim_total_bp_mispredicts:-N/A}
+        sim_loop_pred_used=${sim_loop_pred_used:-N/A}
+        sim_loop_pred_correct=${sim_loop_pred_correct:-N/A}
+        sim_loop_pred_wrong=${sim_loop_pred_wrong:-N/A}
+        sim_sc_correct=${sim_sc_correct:-N/A}
+        sim_sc_wrong=${sim_sc_wrong:-N/A}
+        sim_Is=${sim_Is:-N/A}
+        exec_Is=${exec_Is:-N/A}
 
 
         # 4. Save to CSV
-        echo "$app_name,$sim_ipc,$sim_Is,$sim_total_cond_preds,$sim_incorrect_cond_preds,$sim_total_bp_mispredicts" >> "$OUTPUT_FILE"
+        echo "$app_name,$sim_ipc,$sim_Is,$exec_Is,$sim_total_cond_preds,$sim_incorrect_cond_preds,$sim_loop_pred_used,$sim_loop_pred_correct,$sim_loop_pred_wrong,$sim_sc_correct,$sim_sc_wrong" >> "$OUTPUT_FILE"
         echo "Processed App: $app_name"
         
     else

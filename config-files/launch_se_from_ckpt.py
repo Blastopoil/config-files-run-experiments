@@ -31,8 +31,8 @@ parser = argparse.ArgumentParser(
     description="gem5 system call emulation simulation configuration"
 )
 
-spec_choices = [ 500, 502, 503, 505, 507, 508, 510, 511, 519, 520, 521, 523, 
-                 525, 526, 527, 531, 538, 541, 544, 548, 549, 554, 557 ]
+spec_choices = [ 502, 503, 505, 507, 508, 510, 511, 519, 520, 521, 523, 
+                 526, 527, 531, 541, 544, 548, 549, 554, 557 ]
 parser.add_argument(
     "--spec_number",
     choices=spec_choices,
@@ -41,7 +41,7 @@ parser.add_argument(
     help=f"SPEC17 app identification's tag: {list(spec_choices)}"
 )
 
-config_choices = ["MediumSonicBOOM", "SmallO3", "BigO3"]
+config_choices = ["MediumSonicBOOM", "SmallO3", "BigO3", "CVA6"]
 parser.add_argument(
     "--config",
     choices=config_choices,
@@ -50,11 +50,11 @@ parser.add_argument(
     required=True,
 )
 
-bp_choices = ["TAGE_SC_L", "TAGE_SC", "TAGE_L", "LocalBP"]
+bp_choices = ["TAGE_SC_L", "TAGE_SC", "TAGE_L", "LocalBP", "BiModeBP"]
 parser.add_argument(
     "--bp",
     choices=bp_choices,
-    help=f"configuration to use of the following: {list(bp_choices)}",
+    help=f"bp to use of the following: {list(bp_choices)}",
     type=str,
     required=True,
 )
@@ -90,6 +90,9 @@ match (args.bp):
     case "LocalBP":
         from sys_config_factory.factories import localbp_factory
         bp_factory = localbp_factory
+    case "BiModeBP":
+        from sys_config_factory.factories import bimodebp_factory
+        bp_factory = bimodebp_factory
     
 
 match (args.config):
@@ -100,8 +103,11 @@ match (args.config):
         from sys_config_factory.factories import small_O3_factory
         sys_config = small_O3_factory(mem_size_str, bp_factory)
     case "BigO3":
-        from sys_config_factory.factories import big_O3_factory, localbp_factory
+        from sys_config_factory.factories import big_O3_factory
         sys_config = big_O3_factory(mem_size_str, bp_factory)
+    case "CVA6":
+        from sys_config_factory.factories import cva6_factory
+        sys_config = cva6_factory(mem_size_str, bp_factory)
 
 # Board
 board = RiscvBoard(

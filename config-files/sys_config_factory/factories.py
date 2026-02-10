@@ -3,6 +3,8 @@ import os
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '.')))
 
+from gem5.components.cachehierarchies.classic.private_l1_shared_l2_cache_hierarchy import PrivateL1SharedL2CacheHierarchy
+
 from components.processorComponents import RiscvO3Processor
 
 def medium_sonicboom_factory(memory_size, bp_factory):
@@ -121,7 +123,7 @@ def big_O3_factory(memory_size, bp_factory):
     L1I/L1D = 64KB, L2 = 1MB and L3 = 16MB
     """
     if (memory_size == None):
-        raise ValueError("memory_size must be specified for bigO3 facctory")
+        raise ValueError("memory_size must be specified for bigO3 factory")
 
     from components.memoryComponents import ThreeLevelCacheHierarchy
     cache_hierarchy_data = {
@@ -172,6 +174,45 @@ def big_O3_factory(memory_size, bp_factory):
         "frequency": "3GHz"
     }
 
+def cva6_factory(memory_size, bp_factory):
+    """
+    Generates a system that uses the CVA6 processor configuration,
+    L1I/L1D = 64, L2 = 128KB and no L3
+    """
+    if (memory_size == None):
+        raise ValueError("memory_size must be specified for cva6 factory")
+
+    cache_config = { 
+        "l1i_assoc": 2,
+        "l1i_size": "64KiB",
+        "l1d_assoc": 2,
+        "l1d_size": "64KiB",
+        "l2_assoc": 8,
+        "l2_size": "128KiB",
+    }
+    cache_hierarchy = PrivateL1SharedL2CacheHierarchy(**cache_config)
+
+    from gem5.components.memory.multi_channel import DualChannelDDR4_2400
+    memory_hierarchy = DualChannelDDR4_2400(size=memory_size)
+
+    from data.cva6_data import CVA6_PROCESSOR_CONFIG
+    from components.inorderProcessorComponents import RiscvMinorProcessor
+    
+    processor = RiscvMinorProcessor(**CVA6_PROCESSOR_CONFIG, numCores=1)
+
+    processor.cores[0].core.branchPred = bp_factory()
+    from components.branchPredictorComponents import BTB, RAS
+    from data.cva6_data import CVA6_BTB_CONFIG, CVA6_RAS_CONFIG
+    processor.cores[0].core.branchPred.btb = BTB(CVA6_BTB_CONFIG)
+    processor.cores[0].core.branchPred.ras = RAS(CVA6_RAS_CONFIG)
+
+    return {
+        "processor": processor,
+        "memory_hierarchy": memory_hierarchy,
+        "cache_hierarchy": cache_hierarchy,
+        "frequency": "3GHz"
+    }
+
 def tage_sc_l_factory():
     from components.branchPredictorComponents import customBranchPredictor, TAGE_SC_L_64K
     branchPred = customBranchPredictor(
@@ -209,4 +250,12 @@ def localbp_factory():
     branchPred.takenOnlyHistory = True
     return branchPred
 
-
+def bimodebp_factory():
+    from components.branchPredictorComponents import customBranchPredictor
+    from m5.objects import BiModeBP
+    branchPred = customBranchPredictor(
+        conditional_predictor=BiModeBP()
+    )
+    branchPred.requiresBTBHit = True
+    branchPred.takenOnlyHistory = True
+    return branchPred

@@ -27,15 +27,15 @@ def create_directory(path, clean_if_exists=False):
     os.makedirs(path, exist_ok=True)
     return path
 
-
-def generate_sbatch_script(gem5_binary, config_script, benchmark, app, config, 
+#SBATCH --nodelist=ce209
+def generate_sbatch_script(gem5_binary, config_script, benchmark, app, config, bp, 
                            output_dir, mem_size, slurm_mem_size):
     """Generate an sbatch script for running simulation with specific IQ size."""
     
     spec_number = app[:3]
     sbatch_content = f"""#!/bin/bash
 #SBATCH --partition=ce_200
-#SBATCH --nodelist=ce209
+#SBATCH --exclude=ce210
 #SBATCH --mem-per-cpu={slurm_mem_size}
 #SBATCH --job-name={app}_{config}
 #SBATCH --output={output_dir}/slurm-%j.out
@@ -45,6 +45,7 @@ cd /nfs/home/ce/felixfdec/SPEC/{app}
 {gem5_binary}  -re --outdir={output_dir} {config_script} \
     --spec_number {spec_number} \
     --config {config} \
+    --bp {bp} \
     --mem_size {mem_size} \
     --num_ticks 100000000000 
 """
@@ -72,7 +73,8 @@ def main():
     parser = argparse.ArgumentParser(description="Run gem5 simulations with divided IQ for different benchmarks.")
     parser.add_argument(
         "--benchmark", 
-        choices=["SPEC17"], 
+        choices=["SPEC17"],
+        required=True,
         help="Benchmark to run (or ALL for all benchmarks)"
     )
     spec_choices = [ 502, 503, 505, 507, 508, 510, 511, 519, 520, 521, 523, 
@@ -80,22 +82,27 @@ def main():
     parser.add_argument(
         "--spec_number",
         nargs='?', 
-        help=f"SPEC17 app identification's tag: {list(spec_choices)}"
+        help=f"SPEC17 app identification's tag: {list(spec_choices)}, if not specified, runs all SPES17 apps"
     )
+    config_choices = ["MediumSonicBOOM", "SmallO3", "BigO3", "CVA6"]
     parser.add_argument(
         "--config", 
-        choices=["MediumSonicBOOM_TAGE_SC_L",
-                 "MediumSonicBOOM_TAGE_L", 
-                 "MediumSonicBOOM_TAGE_SC"],
-        required=True,
-        help="Configuration to use (if not specified, both will be used)"
+        choices=config_choices,
+        help=f"configuration to use of the following: {list(config_choices)}, if not specified, runs all configs",
+    )
+    bp_choices = ["TAGE_SC_L", "TAGE_SC", "TAGE_L", "LocalBP", "BiModeBP"]
+    parser.add_argument(
+        "--bp",
+        choices=bp_choices,
+        help=f"bp to use of the following: {list(bp_choices)}, if not specified, runs all bps",
+        type=str,
     )
     args = parser.parse_args()
     
     benchmarks = [args.benchmark] if args.benchmark != "ALL" else ["Splash-4", "NAS", "SPEC17"]
     spec_apps = [int(x) for x in args.spec_number.split(',')] if args.spec_number else spec_choices
-    configs = []
-    configs.append(args.config) if args.config else configs.extend(["MediumSonicBOOM_TAGE_SC_L"])
+    configs = [args.config] if args.config else config_choices
+    bps = [args.bp] if args.bp else bp_choices
 
     # For gem5 v25.0
     #gem5_binary = "/nfs/home/ce/felixfdec/gem5v25_0/build/RISCV/gem5.opt
@@ -139,48 +146,50 @@ def main():
         print(f"{'='*60}")
         
         for config in configs:
-            for app in apps:
-                
-                if (int(app[:3]) not in spec_apps) and benchmark == "SPEC17":
-                    print(f"Skipping {app} as it's not in the specified list of SPEC17 apps.")
-                    continue
+            for bp in bps:
+                for app in apps:
+                    
+                    if (int(app[:3]) not in spec_apps) and benchmark == "SPEC17":
+                        print(f"Skipping {app} as it's not in the specified list of SPEC17 apps.")
+                        continue
 
-                # Create output directory: config/benchmark/app/
-                output_dir = create_directory(
-                    os.path.join(base_output_dir, config, benchmark, app),
-                    clean_if_exists=True
-                )
-                
-                # Generate sbatch script
-                sbatch_script = generate_sbatch_script(
-                    gem5_binary,
-                    config_script,
-                    benchmark,
-                    app,
-                    config,
-                    output_dir,
-                    mem_size,
-                    slurm_mem_size
-                )
-                
-                # Submit the job
-                job_id = submit_job(sbatch_script)
-                
-                if job_id:
-                    submitted_jobs.append((config, benchmark, app, job_id))
-                    print(f"Submitted job {job_id} for {config}/{benchmark}/{app}")
-                else:
-                    print(f"Failed to submit job for {config}/{benchmark}/{app}")
-                
-                # Small delay to avoid overwhelming the scheduler
-                time.sleep(1)
+                    # Create output directory: config/bp/benchmark/app/
+                    output_dir = create_directory(
+                        os.path.join(base_output_dir, config, bp, benchmark, app),
+                        clean_if_exists=True
+                    )
+                    
+                    # Generate sbatch script
+                    sbatch_script = generate_sbatch_script(
+                        gem5_binary,
+                        config_script,
+                        benchmark,
+                        app,
+                        config,
+                        bp,
+                        output_dir,
+                        mem_size,
+                        slurm_mem_size
+                    )
+                    
+                    # Submit the job
+                    job_id = submit_job(sbatch_script)
+                    
+                    if job_id:
+                        submitted_jobs.append((config, bp, benchmark, app, job_id))
+                        print(f"Submitted job {job_id} for {config}/{bp}/{benchmark}/{app}")
+                    else:
+                        print(f"Failed to submit job for {config}/{bp}/{benchmark}/{app}")
+                    
+                    # Small delay to avoid overwhelming the scheduler
+                    time.sleep(1)
     
     print(f"\n{'='*60}")
     print(f"Summary: Submitted {len(submitted_jobs)} jobs")
     print(f"{'='*60}")
     
-    for config, benchmark, app, job_id in submitted_jobs:
-        print(f"Job {job_id}: {config}/{benchmark}/{app}")
+    for config, bp, benchmark, app, job_id in submitted_jobs:
+        print(f"Job {job_id}: {config}/{bp}/{benchmark}/{app}")
     
     print(f"\nMonitor jobs with: squeue -u $USER")
     print(f"Cancel all jobs with: scancel -u $USER")
