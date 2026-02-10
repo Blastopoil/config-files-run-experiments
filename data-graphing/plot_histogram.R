@@ -1,8 +1,8 @@
 #!/usr/bin/env Rscript
 
 # ==============================================================================
-# SCRIPT DE GENERACIÓN DE GRÁFICOS DE BARRAS (COMPARATIVAS)
-# Uso: Rscript plot_bars.R --input "ruta/csvs" --metric "IPC" --cores "BigO3,CVA6"
+# SCRIPT TO GENERATE COMPARATIVE BAR GRAPHS
+# Example: $ Rscript data-graphing/plot_histogram.R -i 2-parser-output/ -o graf.png -m CondMissRate
 # ==============================================================================
 
 suppressPackageStartupMessages({
@@ -29,7 +29,10 @@ option_list <- list(
               help="Lista de Cores a incluir separados por coma (ej: 'BigO3,CVA6') o 'ALL' [default %default]", metavar="LIST"),
   
   make_option(c("-p", "--predictors"), type="character", default="ALL",
-              help="Lista de Predictores a incluir separados por coma (ej: 'TAGE_L,LocalBP') o 'ALL' [default %default]", metavar="LIST")
+              help="Lista de Predictores a incluir separados por coma (ej: 'TAGE_L,LocalBP') o 'ALL' [default %default]", metavar="LIST"),
+  
+  make_option(c("-a", "--apps"), type="character", default=NULL,
+              help="List of SPEC app numbers to plot (e.g., '502,505,519'). If NULL, plots Geomean of all.", metavar="LIST")
 )
 
 opt <- parse_args(OptionParser(option_list=option_list))
@@ -43,14 +46,12 @@ geomean <- function(x) {
 
 # --- 3. Data load ---
 
-# Listar archivos CSV
 files <- list.files(path = opt$input, pattern = "*.csv", full.names = TRUE)
 
 if(length(files) == 0) {
   stop("No se encontraron archivos .csv en el directorio indicado.")
 }
 
-# Leer y combinar todos los CSVs
 all_data <- data.frame()
 
 for (f in files) { 
@@ -76,7 +77,11 @@ for (f in files) {
   all_data <- bind_rows(all_data, temp_df)
 }
 
-# --- 4. Metrics calculation ---
+# --- 4. Processing and Metrics calculation ---
+
+# Extract the App Number
+all_data <- all_data %>%
+  mutate(App_Num = str_extract(App, "^[0-9]+"))
 
 # Convert columns to number format just in case
 all_data$IPC <- as.numeric(as.character(all_data$IPC))
@@ -111,20 +116,37 @@ if (opt$predictors != "ALL") {
   all_data <- all_data %>% filter(Predictor %in% target_preds)
 }
 
+# Filter Apps
+if (!is.null(opt$apps)) {
+  target_apps <- unlist(str_split(opt$apps, ","))
+  all_data <- all_data %>% filter(App_Num %in% target_apps)
+}
+
 if (nrow(all_data) == 0) {
   stop("Warning: After filtering, there is no data left to plot...")
 }
 
 # --- 6. Age (Promediar Benchmarks) ---
 
-# Agrupamos por Core y Predictor y calculamos la media (Geométrica para ratios, Aritmética para conteos)
-summary_data <- all_data %>%
-  group_by(Core, Predictor) %>%
-  summarise(
-    Metric_Value = if(opt$metric %in% c("IPC", "MPKI", "CondMissRate")) geomean(get(opt$metric)) else mean(get(opt$metric)),
-    .groups = 'drop'
-  ) %>%
-  mutate(Config_Label = paste(Core, Predictor, sep="\n"))
+if (is.null(opt$apps)) {
+  # Agrupamos por Core y Predictor y calculamos la media (Geométrica para ratios, Aritmética para conteos)
+  summary_data <- all_data %>%
+    group_by(Core, Predictor) %>%
+    summarise(
+      Metric_Value = if(opt$metric %in% c("IPC", "MPKI", "CondMissRate")) geomean(get(opt$metric)) else mean(get(opt$metric)),
+      .groups = 'drop'
+    ) %>%
+    mutate(Config_Label = paste(Core, Predictor, sep="\n"))
+} else {
+  # Agrupamos por Core, Predictor y App
+  summary_data <- all_data %>%
+    group_by(Core, Predictor, App) %>%
+    summarise(
+      Metric_Value = get(opt$metric),
+      .groups = 'drop'
+    ) %>%
+    mutate(Config_Label = paste(Core, Predictor, App, sep="\n"))
+}
 
 # --- 7. Generate graph ---
 # TODO: Guardar gráfica como imagen vectorial para poder hacer todo el zoom que se quiera
@@ -144,5 +166,5 @@ p <- ggplot(summary_data, aes(x = Config_Label, y = Metric_Value, fill = Core)) 
   )
 
 # --- 8. Guardar ---
-ggsave(opt$output, plot = p, width = 12, height = 6)
+ggsave(opt$output, plot = p, width = 30, height = 12)
 cat(paste("Graph succesfully stored in:", opt$output, "\n"))

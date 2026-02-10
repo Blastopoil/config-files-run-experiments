@@ -59,3 +59,7 @@ Estoy a punto de acabar de conseguir que los 22 benchmarks de SPEC17 funcionen c
 Funcionan la mayoría de SPECs con ckpts y en SE. Ahora toca sacar datos. He probado con TAGE-SC-L, TAGE-SC y TAGE-L. Hay mucha distorsión y además sale que el Loop Predictor afecta más que el Statistical Corrector en lo que ha la correctitud de prediccciones se refiere. Esto se contradice con lo que afirma André Seznec.
 
 Voy por un lado a tomar datos del predictor de dos estados y el g-share, modififcar más parámetros del TAGE por otro, y revisar la forma en la que deshabilito el SC por otro. Además usar los parámertros del BigO3 de Esther.
+
+10/02/2026 - 17:01
+
+Al final he diferido un poco pero hehecho grandes avances. El progreso hecho se indica en los commits, aunque se podría resumir que he conseguido refactorizar todo y añadido configuraciones para obtenenr gráficas interesantes y constructivas de una vez por todas. Entre otras conclusiones, puedo construir gráficas que indican que el impacto en el IPC de predictores es mayor en configuraciones de procesadores más potentes. Ahora estoy alterando la graficación para poder estudiar apps de las SPECs individualmente. Además, he obtenido una gráfica según la cual la exactitud del conditional predictor es directamente proporcional a la complejidad del procesador.
