@@ -28,7 +28,7 @@ def create_directory(path, clean_if_exists=False):
     return path
 
 #SBATCH --nodelist=ce209
-def generate_sbatch_script(gem5_binary, config_script, benchmark, app, config, bp, 
+def generate_sbatch_script(gem5_binary, config_script, spec_dir, app, config, bp, 
                            output_dir, mem_size, slurm_mem_size):
     """Generate an sbatch script for running simulation with specific IQ size."""
     
@@ -40,7 +40,7 @@ def generate_sbatch_script(gem5_binary, config_script, benchmark, app, config, b
 #SBATCH --job-name={app}_{config}
 #SBATCH --output={output_dir}/slurm-%j.out
 
-cd /nfs/home/ce/felixfdec/SPEC/{app}
+cd {spec_dir}/{app}
 
 {gem5_binary}  -re --outdir={output_dir} {config_script} \
     --spec_number {spec_number} \
@@ -99,18 +99,24 @@ def main():
     )
     args = parser.parse_args()
     
-    benchmarks = [args.benchmark] if args.benchmark != "ALL" else ["Splash-4", "NAS", "SPEC17"]
+    benchmarks = [args.benchmark]
     spec_apps = [int(x) for x in args.spec_number.split(',')] if args.spec_number else spec_choices
     configs = [args.config] if args.config else config_choices
     bps = [args.bp] if args.bp else bp_choices
 
-    # For gem5 v25.0
-    #gem5_binary = "/nfs/home/ce/felixfdec/gem5v25_0/build/RISCV/gem5.opt
-    # For gem5 v25.1
-    gem5_binary = "/nfs/home/ce/felixfdec/gem5/build/RISCV/gem5.opt"
+    from dotenv import load_dotenv, find_dotenv
 
-    config_script = "/nfs/home/ce/felixfdec/gem5/config-files-run-experiments/config-files/launch_se_from_ckpt.py"
+    # Loads the paths for the variables used here
+    load_dotenv(find_dotenv())
+
+    gem5_binary = os.getenv("gem5_path")
+    #gem5_binary = "/nfs/home/ce/felixfdec/gem5/build/RISCV/gem5.opt"
+
+    config_script = os.getenv("repo_path") + "/config-files/launch_se_from_ckpt.py"
+    #config_script = "/nfs/home/ce/felixfdec/gem5/config-files-run-experiments/config-files/launch_se_from_ckpt.py"
     
+    spec_dir = os.getenv("SPEC_path")
+
     mem_sizes = {
         "SPEC17": 4,
     }
@@ -120,11 +126,11 @@ def main():
     }
     
     ckpt_base_dirs = {
-        "SPEC17": "/nfs/shared/ce/gem5/ckpts/RISCV/v25.1/syscall_emulation/1core/4GB/SPEC17",
+        "SPEC17": os.getenv("ckpt_path"),
     }
     
     # Base directory for output
-    base_output_dir = "/nfs/home/ce/felixfdec/gem5/config-files-run-experiments/1-output-jobs"
+    base_output_dir = os.getenv("repo_path") + "/1-output-jobs"
     create_directory(base_output_dir)
     
     submitted_jobs = []
@@ -163,7 +169,7 @@ def main():
                     sbatch_script = generate_sbatch_script(
                         gem5_binary,
                         config_script,
-                        benchmark,
+                        spec_dir,
                         app,
                         config,
                         bp,

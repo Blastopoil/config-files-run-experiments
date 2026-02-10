@@ -10,7 +10,15 @@ fi
 
 # --- Configuration ---
 # Base directories
-BASE_DIR="/nfs/home/ce/felixfdec/gem5/config-files-run-experiments"
+ENV_FILE="./../.env"
+if [ -f "$ENV_FILE" ]; then
+    set -a
+    source "$ENV_FILE"
+    set +a
+else
+    echo "Warning: .env file not found at $ENV_FILE. Please create it with the necessary variables."
+fi
+BASE_DIR=$repo_path
 DATA_SRC_DIR="${BASE_DIR}/${1}/SPEC17"
 OUTPUT_DEST_DIR="${BASE_DIR}/2-parser-output"
 

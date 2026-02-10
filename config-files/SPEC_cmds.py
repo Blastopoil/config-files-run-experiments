@@ -1,5 +1,11 @@
+import os
+from dotenv import load_dotenv, find_dotenv
 
-spec_base_dir = "/nfs/shared/ce/gem5/bin/risc-v/SPEC17/"
+# Loads the paths for the variables used here
+load_dotenv(find_dotenv())
+
+spec_base_dir = os.getenv("SPEC_path")
+ckpt_base_dir = os.getenv("ckpt_path")
 
 spec_app_dirs = {
     500: "500.perlbench_r/", 502: "502.gcc_r/", 503: "503.bwaves_r/",
@@ -73,8 +79,6 @@ spec_app_arguments = {
     554: [],
     557: [spec_base_dir+spec_app_dirs[557]+"input.combined.xz", "250", "a841f68f38572a49d86226b7ff5baeb31bd19dc637a922a972b2e6d1257a890f6a544ecab967c313e370478c74f760eb229d4eef8a8d2836d233d3e9dd1430bf", "40401484", "41217675", "7"]
 }
-
-ckpt_base_dir = "/nfs/shared/ce/gem5/ckpts/RISCV/v25.1/syscall_emulation/1core/4GB/SPEC17/"
 
 spec_ckpt_dirs = {
     500: "ckpt_500.perlbench_r",
