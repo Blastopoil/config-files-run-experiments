@@ -33,7 +33,7 @@ if [ ! -d "$OUTPUT_DEST_DIR" ]; then
 fi
 
 # --- Initialize Output File ---
-echo "App,IPC,Sim_Is,Exec_Is,total_cond_predicts,wrong_cond_predicts,total_bp_mispredicts" > "$OUTPUT_FILE"
+echo "App,IPC,Sim_Is,total_cond_predicts,wrong_cond_predicts,total_bp_mispredicts" > "$OUTPUT_FILE"
 
 echo "------------------------------------------------"
 echo "Reading from:     $DATA_SRC_DIR"
