@@ -1,58 +1,50 @@
 #!/bin/bash
 
-# --- Configuración ---
-# Directorio raíz donde están los trabajos (según tu imagen)
+# Directory with the raw data
 JOBS_DIR="1-output-jobs"
-# Nombre de tu script original (asegúrate de que esté en la misma carpeta)
-PARSER_SCRIPT="./data-parsing/simple_parser.sh"
+# Parser script to use
+PARSER_SCRIPT=$1
 
-# --- Verificaciones iniciales ---
 if [ ! -d "$JOBS_DIR" ]; then
-    echo "Error: No encuentro el directorio '$JOBS_DIR' en la ruta actual."
+    echo "Error: Didn't find '$JOBS_DIR' with the current path"
     exit 1
 fi
 
 if [ ! -f "$PARSER_SCRIPT" ]; then
-    echo "Error: No encuentro el script '$PARSER_SCRIPT'. Asegúrate de que esté en esta carpeta."
+    echo "Error: Didn't find the script '$PARSER_SCRIPT'"
+    echo "Sample usage: $0 ./data-parsing/simple_parser.sh"
     exit 1
 fi
 
-# Hacer ejecutable el parser original por si acaso
-chmod +x "$PARSER_SCRIPT"
-
 echo "========================================================"
-echo "Iniciando procesamiento masivo de resultados"
-echo "Directorio base: $JOBS_DIR"
+echo "Starting batch processing of job outputs with the parser."
+echo "Base directory: $JOBS_DIR"
 echo "========================================================"
 
-# --- Bucle Principal ---
-
-# 1. Iterar sobre las configuraciones de CPU (Nivel 1: BigO3, CVA6, MediumSonicBOOM...)
+# 1. Iterate on level 1 (Level 1: BigO3, CVA6, MediumSonicBOOM...)
 for core_dir in "$JOBS_DIR"/*; do
     if [ -d "$core_dir" ]; then
         core_name=$(basename "$core_dir")
         
-        # 2. Iterar sobre los Predictores de Salto (Nivel 2: LocalBP, TAGE_L, etc.)
+        # 2. Iterate on level 2 (Level 2: LocalBP, TAGE_L, etc.)
         for bp_dir in "$core_dir"/*; do
             if [ -d "$bp_dir" ]; then
                 bp_name=$(basename "$bp_dir")
                 
-                # VERIFICACIÓN CLAVE:
-                # El parser original asume que dentro de esta carpeta existe "SPEC17".
-                # Solo ejecutamos el parser si existe SPEC17 dentro.
+                # All parsers assume a file structure with SPEC17/...
                 if [ -d "$bp_dir/SPEC17" ]; then
                     
-                    # Construimos el argumento tal como lo pide tu script original.
-                    # Ejemplo: 1-output-jobs/MediumSonicBOOM/TAGE_SC_L
+                    # Build arguments as required by the original script.
+                    # Example: 1-output-jobs/MediumSonicBOOM/TAGE_SC_L
                     target_arg="$JOBS_DIR/$core_name/$bp_name"
                     
                     echo ">> Procesando: $core_name / $bp_name"
                     
-                    # Llamada al script original
+                    # Script call with the target argument
                     $PARSER_SCRIPT "$target_arg"
                     
                 else
-                    echo "Saltando $core_name/$bp_name (No se encontró carpeta SPEC17)"
+                    echo "Skiping $core_name/$bp_name (Didn't find SPEC17 folder)"
                 fi
             fi
         done
@@ -60,5 +52,5 @@ for core_dir in "$JOBS_DIR"/*; do
 done
 
 echo "========================================================"
-echo "Procesamiento masivo finalizado."
+echo "All data parsing finalized."
 echo "========================================================"
