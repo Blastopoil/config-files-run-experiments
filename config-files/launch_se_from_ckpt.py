@@ -8,6 +8,19 @@ cd ~/SPEC/507.cactuBSSN_r/ (or any other folder of the SPEC app you are going to
 --config BigO3 \
 --bp TAGE_SC_L \
 --mem_size 4
+
+OR
+
+cd ~/Workspaces/SPEC/507.cactuBSSN_r/
+
+~/Workspaces/gem5/build/RISCV/gem5.opt \
+--outdir=/home/blastopoil/Workspaces/gem5/config-files-run-experiments/improv-output \
+/home/blastopoil/Workspaces/gem5/config-files-run-experiments/config-files/launch_se_from_ckpt.py \
+--spec_number 507 \
+--config BigO3 \
+--bp TAGE_SC_L \
+--mem_size 4
+
 """
 # To enable debug flags, add the following gem5 option:
 # --debug-flags=LTage,TageSCL
