@@ -90,7 +90,7 @@ def main():
         choices=config_choices,
         help=f"configuration to use of the following: {list(config_choices)}, if not specified, runs all configs",
     )
-    bp_choices = ["TAGE_SC_L", "TAGE_SC", "TAGE_L", "LocalBP", "BiModeBP", "FalseBP", "RandomBP"]
+    bp_choices = ["TAGE_SC_L", "TAGE_SC", "TAGE_L", "LocalBP", "BiModeBP", "AlwaysFalseBP", "RandomBP"]
     parser.add_argument(
         "--bp",
         choices=bp_choices,

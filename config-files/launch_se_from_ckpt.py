@@ -63,7 +63,7 @@ parser.add_argument(
     required=True,
 )
 
-bp_choices = ["TAGE_SC_L", "TAGE_SC", "TAGE_L", "LocalBP", "BiModeBP", "FalseBP", "RandomBP"]
+bp_choices = ["TAGE_SC_L", "TAGE_SC", "TAGE_L", "LocalBP", "BiModeBP", "AlwaysFalseBP", "RandomBP"]
 parser.add_argument(
     "--bp",
     choices=bp_choices,
@@ -106,7 +106,7 @@ match (args.bp):
     case "BiModeBP":
         from sys_config_factory.factories import bimodebp_factory
         bp_factory = bimodebp_factory
-    case "FalseBP":
+    case "AlwaysFalseBP":
         from sys_config_factory.factories import falsebp_factory
         bp_factory = falsebp_factory
     case "RandomBP":
