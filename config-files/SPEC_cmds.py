@@ -4,8 +4,8 @@ from dotenv import load_dotenv, find_dotenv
 # Loads the paths for the variables used here
 load_dotenv(find_dotenv())
 
-spec_base_dir = os.getenv("SPEC_path")
-ckpt_base_dir = os.getenv("ckpt_path")
+spec_base_dir = os.getenv("SPEC_path") + "/"
+ckpt_base_dir = os.getenv("ckpt_path") + "/"
 
 spec_app_dirs = {
     500: "500.perlbench_r/", 502: "502.gcc_r/", 503: "503.bwaves_r/",

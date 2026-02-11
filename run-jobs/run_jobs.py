@@ -126,7 +126,7 @@ def main():
     }
     
     ckpt_base_dirs = {
-        "SPEC17": os.getenv("ckpt_path"),
+        "SPEC17": os.getenv("ckpt_path") + "/",
     }
     
     # Base directory for output
