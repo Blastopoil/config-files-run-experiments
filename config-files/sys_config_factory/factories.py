@@ -269,3 +269,13 @@ def falsebp_factory():
     branchPred.requiresBTBHit = True
     branchPred.takenOnlyHistory = True
     return branchPred
+
+def randombp_factory():
+    from components.branchPredictorComponents import customBranchPredictor
+    from m5.objects import RandomBP
+    branchPred = customBranchPredictor(
+        conditional_predictor=RandomBP()
+    )
+    branchPred.requiresBTBHit = True
+    branchPred.takenOnlyHistory = True
+    return branchPred
