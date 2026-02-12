@@ -1,13 +1,33 @@
 import os
-from dotenv import load_dotenv, find_dotenv
 from pathlib import Path
 
-# Try to load .env from this repo first, then fall back to find_dotenv()
+def load_env_file(env_path):
+    """Load environment variables from a .env file."""
+    env_vars = {}
+    if not env_path.exists():
+        return env_vars
+    
+    with open(env_path, 'r') as f:
+        for line in f:
+            line = line.strip()
+            # Skip empty lines and comments
+            if not line or line.startswith('#'):
+                continue
+            # Parse key=value pairs
+            if '=' in line:
+                key, value = line.split('=', 1)
+                # Remove quotes if present
+                value = value.strip('"').strip("'")
+                env_vars[key] = value
+    return env_vars
+
+# Try to load .env from this repo first
 _repo_env = Path(__file__).resolve().parents[1] / ".env"
 if _repo_env.exists():
-    load_dotenv(_repo_env)
-else:
-    load_dotenv(find_dotenv())
+    env_vars = load_env_file(_repo_env)
+    # Set environment variables
+    for key, value in env_vars.items():
+        os.environ.setdefault(key, value)
 
 SPEC_path = os.getenv("SPEC_path")
 ckpt_path = os.getenv("ckpt_path")

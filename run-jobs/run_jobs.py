@@ -104,10 +104,35 @@ def main():
     configs = [args.config] if args.config else config_choices
     bps = [args.bp] if args.bp else bp_choices
 
-    from dotenv import load_dotenv, find_dotenv
+    def load_env_file(env_path):
+        """Load environment variables from a .env file."""
+        env_vars = {}
+        if not os.path.exists(env_path):
+            return env_vars
+        
+        with open(env_path, 'r') as f:
+            for line in f:
+                line = line.strip()
+                # Skip empty lines and comments
+                if not line or line.startswith('#'):
+                    continue
+                # Parse key=value pairs
+                if '=' in line:
+                    key, value = line.split('=', 1)
+                    # Remove quotes if present
+                    value = value.strip('"').strip("'")
+                    env_vars[key] = value
+        return env_vars
 
     # Loads the paths for the variables used here
-    load_dotenv(find_dotenv())
+    # Look for .env file in the parent directory of this script
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    env_path = os.path.join(os.path.dirname(script_dir), ".env")
+    env_vars = load_env_file(env_path)
+    
+    # Set environment variables
+    for key, value in env_vars.items():
+        os.environ.setdefault(key, value)
 
     gem5_binary = os.getenv("gem5_path")
     #gem5_binary = "/nfs/home/ce/felixfdec/gem5/build/RISCV/gem5.opt"
