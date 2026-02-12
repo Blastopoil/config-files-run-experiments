@@ -10,7 +10,7 @@ fi
 
 # --- Configuration ---
 # Base directories
-ENV_FILE="./../.env"
+ENV_FILE="./.env"
 if [ -f "$ENV_FILE" ]; then
     set -a
     source "$ENV_FILE"
