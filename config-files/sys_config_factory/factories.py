@@ -260,12 +260,23 @@ def bimodebp_factory():
     branchPred.takenOnlyHistory = True
     return branchPred
 
+def truebp_factory():
+    from components.branchPredictorComponents import customBranchPredictor
+    from m5.objects import AlwaysBooleanBP
+    branchPred = customBranchPredictor(
+        conditional_predictor=AlwaysBooleanBP() # The param alwaysTruePreds defaults to True
+    )
+    branchPred.requiresBTBHit = True
+    branchPred.takenOnlyHistory = True
+    return branchPred
+
 def falsebp_factory():
     from components.branchPredictorComponents import customBranchPredictor
-    from m5.objects import AlwaysFalseBP
+    from m5.objects import AlwaysBooleanBP
     branchPred = customBranchPredictor(
-        conditional_predictor=AlwaysFalseBP()
+        conditional_predictor=AlwaysBooleanBP()
     )
+    branchPred.conditionalBranchPred.alwaysTruePreds = False
     branchPred.requiresBTBHit = True
     branchPred.takenOnlyHistory = True
     return branchPred
