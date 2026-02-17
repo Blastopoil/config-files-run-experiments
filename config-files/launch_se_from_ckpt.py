@@ -87,6 +87,13 @@ parser.add_argument(
     help="Maximum number of ticks to simulate",
 )
 
+parser.add_argument(
+    "--extra_params",
+    type=str,
+    default=None,
+    help="String representation of a dictionary with extra parameters to override in the processor configuration (e.g. '{\"fetchWidth\": 2}' to override fetchWidth to 2)",
+)
+
 args = parser.parse_args()
 mem_size_str = f"{args.mem_size}GiB"
 
@@ -116,19 +123,31 @@ match (args.bp):
         from sys_config_factory.factories import randombp_factory
         bp_factory = randombp_factory
 
+if args.extra_params:
+    try:
+        extra_params = eval(args.extra_params)
+        if not isinstance(extra_params, dict):
+            print("ERROR: --extra_params must be a string representation of a dictionary")
+            exit(1)
+    except Exception as e:
+        print(f"ERROR: Failed to parse --extra_params: {e}")
+        exit(1)
+else:
+    extra_params = None
+
 match (args.config):
     case "MediumSonicBOOM":
         from sys_config_factory.factories import medium_sonicboom_factory
-        sys_config = medium_sonicboom_factory(mem_size_str, bp_factory)
+        sys_config = medium_sonicboom_factory(mem_size_str, bp_factory, extra=extra_params)
     case "SmallO3":
         from sys_config_factory.factories import small_O3_factory
-        sys_config = small_O3_factory(mem_size_str, bp_factory)
+        sys_config = small_O3_factory(mem_size_str, bp_factory, extra=extra_params)
     case "BigO3":
         from sys_config_factory.factories import big_O3_factory
-        sys_config = big_O3_factory(mem_size_str, bp_factory)
+        sys_config = big_O3_factory(mem_size_str, bp_factory, extra=extra_params)
     case "CVA6":
         from sys_config_factory.factories import cva6_factory
-        sys_config = cva6_factory(mem_size_str, bp_factory)
+        sys_config = cva6_factory(mem_size_str, bp_factory, extra=extra_params)
 
 # Board
 board = RiscvBoard(
