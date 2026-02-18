@@ -54,7 +54,7 @@ parser.add_argument(
     help=f"SPEC17 app identification's tag: {list(spec_choices)}"
 )
 
-config_choices = ["MediumSonicBOOM", "SmallO3", "BigO3", "CVA6"]
+config_choices = ["MediumSonicBOOM", "SmallO3", "BigO3", "BaseCPU", "CVA6"]
 parser.add_argument(
     "--config",
     choices=config_choices,
@@ -97,6 +97,21 @@ parser.add_argument(
 args = parser.parse_args()
 mem_size_str = f"{args.mem_size}GiB"
 
+if args.extra_params:
+    if args.config != "BaseCPU":
+        print("At the moment, extra params are to be passed only to the the BaseCPU")
+        exit(1)
+    try:
+        extra_params = eval(args.extra_params)
+        if not isinstance(extra_params, dict):
+            print("ERROR: --extra_params must be a string representation of a dictionary")
+            exit(1)
+    except Exception as e:
+        print(f"ERROR: Failed to parse --extra_params: {e}")
+        exit(1)
+else:
+    extra_params = None
+
 match (args.bp):
     case "TAGE_SC_L":
         from sys_config_factory.factories import tage_sc_l_factory
@@ -123,31 +138,22 @@ match (args.bp):
         from sys_config_factory.factories import randombp_factory
         bp_factory = randombp_factory
 
-if args.extra_params:
-    try:
-        extra_params = eval(args.extra_params)
-        if not isinstance(extra_params, dict):
-            print("ERROR: --extra_params must be a string representation of a dictionary")
-            exit(1)
-    except Exception as e:
-        print(f"ERROR: Failed to parse --extra_params: {e}")
-        exit(1)
-else:
-    extra_params = None
-
 match (args.config):
     case "MediumSonicBOOM":
         from sys_config_factory.factories import medium_sonicboom_factory
-        sys_config = medium_sonicboom_factory(mem_size_str, bp_factory, extra=extra_params)
+        sys_config = medium_sonicboom_factory(mem_size_str, bp_factory)
     case "SmallO3":
         from sys_config_factory.factories import small_O3_factory
-        sys_config = small_O3_factory(mem_size_str, bp_factory, extra=extra_params)
+        sys_config = small_O3_factory(mem_size_str, bp_factory)
     case "BigO3":
         from sys_config_factory.factories import big_O3_factory
-        sys_config = big_O3_factory(mem_size_str, bp_factory, extra=extra_params)
+        sys_config = big_O3_factory(mem_size_str, bp_factory)
+    case "BaseCPU":
+        from sys_config_factory.factories import base_cpu_factory
+        sys_config = base_cpu_factory(mem_size_str, bp_factory, extra=extra_params)
     case "CVA6":
         from sys_config_factory.factories import cva6_factory
-        sys_config = cva6_factory(mem_size_str, bp_factory, extra=extra_params)
+        sys_config = cva6_factory(mem_size_str, bp_factory)
 
 # Board
 board = RiscvBoard(

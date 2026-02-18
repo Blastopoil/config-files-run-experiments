@@ -7,7 +7,7 @@ from gem5.components.cachehierarchies.classic.private_l1_shared_l2_cache_hierarc
 
 from components.processorComponents import RiscvO3Processor
 
-def medium_sonicboom_factory(memory_size, bp_factory, extra=None):
+def medium_sonicboom_factory(memory_size, bp_factory):
     """
     Generates a system that uses the medium SONICBOOM processor configuration,
     4 GiB memory, L1I/L1D = 32KB, L2 = 256KiB and L3 = 2MB
@@ -45,10 +45,7 @@ def medium_sonicboom_factory(memory_size, bp_factory, extra=None):
     memory_hierarchy = DualChannelDDR4_2400(size=memory_size)
 
     from data.medium_sonicboom_data import MEDIUM_SONICBOOM_PROCESSOR_CONFIG
-    processor_config = MEDIUM_SONICBOOM_PROCESSOR_CONFIG.copy()
-    if extra:
-        processor_config.update(extra.get("processor", {}))
-    processor = RiscvO3Processor(proc_config=processor_config, num_cores=1)
+    processor = RiscvO3Processor(proc_config=MEDIUM_SONICBOOM_PROCESSOR_CONFIG, num_cores=1)
 
     processor.cores[0].core.branchPred = bp_factory()
     from components.branchPredictorComponents import BTB, RAS
@@ -63,7 +60,7 @@ def medium_sonicboom_factory(memory_size, bp_factory, extra=None):
         "frequency": "3GHz"
     }
 
-def small_O3_factory(memory_size, bp_factory, extra=None):
+def small_O3_factory(memory_size, bp_factory):
     """
     Generates a system that uses a small O3 processor configuration,
     L1I/L1D = 32KB, L2 = 256KB and L3 = 2MB
@@ -101,10 +98,7 @@ def small_O3_factory(memory_size, bp_factory, extra=None):
     memory_hierarchy = DualChannelDDR4_2400(size=memory_size)
 
     from data.small_O3_data import SMALL_O3_PROCESSOR_CONFIG
-    processor_config = SMALL_O3_PROCESSOR_CONFIG.copy()
-    if extra:
-        processor_config.update(extra.get("processor", {}))
-    processor = RiscvO3Processor(proc_config=processor_config, num_cores=1)
+    processor = RiscvO3Processor(proc_config=SMALL_O3_PROCESSOR_CONFIG, num_cores=1)
 
     processor.cores[0].core.branchPred = bp_factory()
     from components.branchPredictorComponents import BTB, RAS
@@ -123,7 +117,7 @@ def small_O3_factory(memory_size, bp_factory, extra=None):
         "frequency": "3GHz"
     }
 
-def big_O3_factory(memory_size, bp_factory, extra=None):
+def big_O3_factory(memory_size, bp_factory):
     """
     Generates a system that uses a big O3 processor configuration,
     L1I/L1D = 64KB, L2 = 1MB and L3 = 16MB
@@ -161,10 +155,7 @@ def big_O3_factory(memory_size, bp_factory, extra=None):
     memory_hierarchy = DualChannelDDR4_2400(size=memory_size)
 
     from data.big_O3_data import BIG_O3_PROCESSOR_CONFIG
-    processor_config = BIG_O3_PROCESSOR_CONFIG.copy()
-    if extra:
-        processor_config.update(extra.get("processor", {}))
-    processor = RiscvO3Processor(proc_config=processor_config, num_cores=1)
+    processor = RiscvO3Processor(proc_config=BIG_O3_PROCESSOR_CONFIG, num_cores=1)
 
     processor.cores[0].core.branchPred = bp_factory()
     from components.branchPredictorComponents import BTB, RAS
@@ -183,7 +174,75 @@ def big_O3_factory(memory_size, bp_factory, extra=None):
         "frequency": "3GHz"
     }
 
-def cva6_factory(memory_size, bp_factory, extra=None):
+def base_cpu_factory(memory_size, bp_factory, extra=None):
+    """
+    Generates a system that uses the predetermined gem5 configuration,
+    L1I/L1D = 64KB, L2 = 1MB and L3 = 16MB (the BigO3 cache hierarchy)
+    """
+    if (memory_size == None):
+        raise ValueError("memory_size must be specified for bigO3 factory")
+
+    from components.memoryComponents import ThreeLevelCacheHierarchy
+    cache_hierarchy_data = {
+        "l1i_assoc": 4,
+        "l1i_size": "64KiB",
+        "l1i_tag_latency": 1,
+        "l1i_data_latency": 1,
+        "l1i_response_latency": 1,
+        "l1d_assoc": 8,
+        "l1d_size": "64KiB",
+        "l1d_tag_latency": 1,
+        "l1d_data_latency": 2,
+        "l1d_response_latency": 1,
+        "l1d_writeback_clean": True,
+        "l2_assoc": 8,
+        "l2_size": "1MiB",
+        "l2_tag_latency": 3,
+        "l2_data_latency": 6,
+        "l2_response_latency": 3,
+        "l3_assoc": 16,
+        "l3_size": "16MiB",
+        "l3_tag_latency": 10,
+        "l3_data_latency": 20,
+        "l3_response_latency": 10,
+    }
+    cache_hierarchy = ThreeLevelCacheHierarchy(**cache_hierarchy_data)
+
+    from gem5.components.memory.multi_channel import DualChannelDDR4_2400
+    memory_hierarchy = DualChannelDDR4_2400(size=memory_size)
+
+    # Doesn't import anything, it's nothing more than an empty dictionary to modify no parametres 
+    # (except the ones passed in extra)
+    processor_config = {}
+    if extra:
+        processor_config.update(extra)
+    processor = RiscvO3Processor(proc_config=processor_config, num_cores=1)
+
+    processor.cores[0].core.branchPred = bp_factory()
+    from components.branchPredictorComponents import BTB, RAS
+    from data.big_O3_data import BIG_O3_BTB_CONFIG, BIG_O3_RAS_CONFIG
+    processor.cores[0].core.branchPred.btb = BTB(BIG_O3_BTB_CONFIG)
+    processor.cores[0].core.branchPred.ras = RAS(BIG_O3_RAS_CONFIG)
+
+    if "numIQEntries" in extra:
+        match(extra["numIQEntries"]):
+            case "SmallO3":
+                from components.queueComponents import smallO3_IQ
+                from data.small_O3_data import SMALL_O3_IQ_ENTRIES
+                processor.cores[0].core.instQueues = [smallO3_IQ(SMALL_O3_IQ_ENTRIES)]
+            case "BigO3":
+                from components.queueComponents import bigO3_IQ
+                from data.big_O3_data import BIG_O3_IQ_ENTRIES
+                processor.cores[0].core.instQueues = [bigO3_IQ(BIG_O3_IQ_ENTRIES)]
+
+    return {
+        "processor": processor,
+        "memory_hierarchy": memory_hierarchy,
+        "cache_hierarchy": cache_hierarchy,
+        "frequency": "3GHz"
+    }
+
+def cva6_factory(memory_size, bp_factory):
     """
     Generates a system that uses the CVA6 processor configuration,
     L1I/L1D = 64, L2 = 128KB and no L3
@@ -207,10 +266,7 @@ def cva6_factory(memory_size, bp_factory, extra=None):
     from data.cva6_data import CVA6_PROCESSOR_CONFIG
     from components.inorderProcessorComponents import RiscvMinorProcessor
 
-    processor_config = CVA6_PROCESSOR_CONFIG.copy()
-    if extra:
-        processor_config.update(extra.get("processor", {}))
-    processor = RiscvMinorProcessor(**processor_config, numCores=1)
+    processor = RiscvMinorProcessor(**CVA6_PROCESSOR_CONFIG, numCores=1)
 
     processor.cores[0].core.branchPred = bp_factory()
     from components.branchPredictorComponents import BTB, RAS
