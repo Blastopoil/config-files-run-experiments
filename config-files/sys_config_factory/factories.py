@@ -214,8 +214,14 @@ def base_cpu_factory(memory_size, bp_factory, extra=None):
     # Doesn't import anything, it's nothing more than an empty dictionary to modify no parametres 
     # (except the ones passed in extra)
     processor_config = {}
+    IQ_config = None
+    
     if extra:
         processor_config.update(extra)
+        if "numIQEntries" in extra:
+            IQ_config = extra["numIQEntries"]
+            del processor_config["numIQEntries"] # This is not a param of the processor, it's used to determine the IQ config
+    
     processor = RiscvO3Processor(proc_config=processor_config, num_cores=1)
 
     processor.cores[0].core.branchPred = bp_factory()
@@ -224,8 +230,8 @@ def base_cpu_factory(memory_size, bp_factory, extra=None):
     processor.cores[0].core.branchPred.btb = BTB(BIG_O3_BTB_CONFIG)
     processor.cores[0].core.branchPred.ras = RAS(BIG_O3_RAS_CONFIG)
 
-    if "numIQEntries" in extra:
-        match(extra["numIQEntries"]):
+    if IQ_config:
+        match(IQ_config):
             case "SmallO3":
                 from components.queueComponents import smallO3_IQ
                 from data.small_O3_data import SMALL_O3_IQ_ENTRIES

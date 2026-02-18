@@ -225,84 +225,83 @@ def main():
                 for r_idx, rob_dict in enumerate(permutations_ROB_entries):
                     allowed_others = map_rob_to_others.get(r_idx, [])
                     
-                    # 4. Iterar sobre Queues permitidas
-                    for q_idx in allowed_others:
-                        queue_dict = permutations_Queue_entries[q_idx]
+                    # 4. Iterar sobre Queues y Regs permitidos
+                    for q_r_idx in allowed_others:
+                        queue_dict = permutations_Queue_entries[q_r_idx]
+                        regs_dict = permutations_registers[q_r_idx]
                         
-                        # 5. Iterar sobre Registers permitidos
-                        for reg_idx in allowed_others:
-                            regs_dict = permutations_registers[reg_idx]
-                            
-                            # FUSIÓN: Crear el diccionario maestro de configuración
-                            full_config_dict = {
-                                **width_dict,
-                                **commit_dict,
-                                **rob_dict,
-                                **queue_dict,
-                                **regs_dict
-                            }
+                        # FUSIÓN: Crear el diccionario maestro de configuración
+                        full_config_dict = {
+                            **width_dict,
+                            **commit_dict,
+                            **rob_dict,
+                            **queue_dict,
+                            **regs_dict
+                        }
 
-                            # CONSTRUCCIÓN DE NOMBRE DE CARPETA ÚNICO
-                            # Ejemplo: SmallO3_ROB64_IQMedium_CW4
-                            witdh_val = full_config_dict.get("fetchWidth") # Solo para mostrar el width, asumiendo que fetch/dec/rename tienen el mismo valor.
-                            width_commit_val = full_config_dict.get("commitWidth")
-                            rob_val = full_config_dict.get("numROBEntries")
-                            iq_val = full_config_dict.get("numIQEntries")
-                            match iq_val:
-                                case "MediumSonicBOOM":
-                                    iq_val = "IQ64"
-                                case "SmallO3":
-                                    iq_val = "IQ72"
-                                case "BigO3":
-                                    iq_val = "IQ180"
-                            cw_val = full_config_dict.get("commitWidth")
+                        # CONSTRUCCIÓN DE NOMBRE DE CARPETA ÚNICO
+                        # Ejemplo: SmallO3_ROB64_IQMedium_CW4
+                        witdh_val = full_config_dict.get("fetchWidth") # Solo para mostrar el width, asumiendo que fetch/dec/rename tienen el mismo valor.
+                        width_commit_val = full_config_dict.get("commitWidth")
+                        rob_val = full_config_dict.get("numROBEntries")
+                        iq_val = full_config_dict.get("numIQEntries")
+                        reg_val = full_config_dict.get("numPhysIntRegs")
+                        match reg_val:
+                            case 80:
+                                reg_val = "REGSonic"
+                            case 128:
+                                reg_val = "REGSmall"
+                            case 228:
+                                reg_val = "REGBig"
 
-                            
-                            # Construimos el nombre del directorio
-                            # Usamos logical_base_name (SmallO3/BigO3) como prefijo
-                            dir_suffix = f"WIDTH{witdh_val}_COMMITW{width_commit_val}_ROB{rob_val}_IQ{iq_val}_CW{cw_val}"
-                            config_name = f"BaseCPU"
+                        cw_val = full_config_dict.get("commitWidth")
 
-                            # Bucle final de BPs y Aplicaciones
-                            for bp in bps:
-                                for app in apps:
-                                    if (int(app[:3]) not in spec_apps) and benchmark == "SPEC17":
-                                        continue
+                        
+                        # Construimos el nombre del directorio
+                        # Usamos logical_base_name (SmallO3/BigO3) como prefijo
+                        dir_suffix = f"WIDTH{witdh_val}_COMMITW{width_commit_val}_ROB{rob_val}_IQ{iq_val}_REG{reg_val}"
+                        config_name = f"BaseCPU"
 
-                                    # Estructura de salida:
-                                    # 1-output-jobs / CONFIG_NAME / BP / BENCHMARK / APP
-                                    output_dir = create_directory(
-                                        os.path.join(base_output_dir, config_name, dir_suffix, bp, benchmark, app),
-                                        clean_if_exists=True
-                                    )
-                                    
-                                    # Generamos el script SBATCH
-                                    # Pasamos 'logical_base_name' para que sepa si es familia Small/Big (opcional para el nombre del job)
-                                    # Pero internamente generate_sbatch_script pondrá --config BaseCPU
-                                    sbatch_script = generate_sbatch_script(
-                                        gem5_binary,
-                                        config_script,
-                                        spec_dir,
-                                        app,
-                                        dir_suffix, # Usamos el nombre único para el job name del sbatch
-                                        bp,
-                                        output_dir,
-                                        mem_size,
-                                        slurm_mem_size,
-                                        full_config_dict # El diccionario con todos los params
-                                    )
-                                    
-                                    # Enviar trabajo
-                                    job_id = submit_job(sbatch_script)
-                                    
-                                    if job_id:
-                                        submitted_jobs.append((dir_suffix, bp, benchmark, app, job_id))
-                                        print(f"Enviado {job_id}: {dir_suffix} | {bp} | {app}")
-                                    else:
-                                        print(f"Falló: {dir_suffix}/{bp}/{app}")
-                                    
-                                    # Pequeña pausa para no saturar el scheduler
-                                    time.sleep(0.1)
+                        # Bucle final de BPs y Aplicaciones
+                        for bp in bps:
+                            for app in apps:
+                                if (int(app[:3]) not in spec_apps) and benchmark == "SPEC17":
+                                    continue
+
+                                # Estructura de salida:
+                                # 1-output-jobs / CONFIG_NAME / BP / BENCHMARK / APP
+                                output_dir = create_directory(
+                                    os.path.join(base_output_dir, config_name, dir_suffix, bp, benchmark, app),
+                                    clean_if_exists=True
+                                )
+                                
+                                # Generamos el script SBATCH
+                                # Pasamos 'logical_base_name' para que sepa si es familia Small/Big (opcional para el nombre del job)
+                                # Pero internamente generate_sbatch_script pondrá --config BaseCPU
+                                sbatch_script = generate_sbatch_script(
+                                    gem5_binary,
+                                    config_script,
+                                    spec_dir,
+                                    app,
+                                    dir_suffix, # Usamos el nombre único para el job name del sbatch
+                                    bp,
+                                    output_dir,
+                                    mem_size,
+                                    slurm_mem_size,
+                                    full_config_dict # El diccionario con todos los params
+                                )
+                                
+                                # Enviar trabajo
+                                job_id = submit_job(sbatch_script)
+                                
+                                if job_id:
+                                    submitted_jobs.append((dir_suffix, bp, benchmark, app, job_id))
+                                    print(f"Enviado {job_id}: {dir_suffix} | {bp} | {app}")
+                                else:
+                                    print(f"Falló: {dir_suffix}/{bp}/{app}")
+                                
+                                # Pequeña pausa para no saturar el scheduler
+                                time.sleep(0.1)
 
     print(f"\n{'='*60}")
     print(f"Resumen: Se enviaron {len(submitted_jobs)} trabajos.")
