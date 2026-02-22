@@ -102,7 +102,16 @@ def main():
     benchmarks = [args.benchmark]
     spec_apps = [int(x) for x in args.spec_number.split(',')] if args.spec_number else spec_choices
     configs = [args.config] if args.config else config_choices
-    bps = [args.bp] if args.bp else bp_choices
+
+    if args.bp:
+        bps = [x.strip() for x in args.bp.split(",") if x.strip()]
+        invalid_bps = [x for x in bps if x not in bp_choices]
+        if invalid_bps:
+            parser.error(f"Invalid --bp value(s): {invalid_bps}. Valid values: {bp_choices}")
+        # opcional: eliminar duplicados manteniendo orden
+        bps = list(dict.fromkeys(bps))
+    else:
+        bps = bp_choices
 
     def load_env_file(env_path):
         """Load environment variables from a .env file."""
@@ -213,7 +222,7 @@ def main():
                         print(f"Failed to submit job for {config}/{bp}/{benchmark}/{app}")
                     
                     # Small delay to avoid overwhelming the scheduler
-                    time.sleep(1)
+                    time.sleep(0.1)
     
     print(f"\n{'='*60}")
     print(f"Summary: Submitted {len(submitted_jobs)} jobs")
