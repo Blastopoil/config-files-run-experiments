@@ -13,8 +13,8 @@ SMALL_O3_PROCESSOR_CONFIG = {
 
     "numROBEntries" : 192,
     
-    "LQEntries" : 20,
-    "SQEntries" : 15,
+    "LQEntries" : 36,
+    "SQEntries" : 18,
 
     "numPhysIntRegs" : 128,
     "numPhysFloatRegs" : 119

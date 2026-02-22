@@ -6,15 +6,15 @@ BIG_O3_PROCESSOR_CONFIG = {
     "decodeWidth" : 6,
     "renameWidth" : 6,
 
-    "dispatchWidth" : 11,
-    "issueWidth" : 11,
+    "dispatchWidth" : 12,
+    "issueWidth" : 12,
     "commitWidth" : 8,
-    "wbWidth" : 11,
+    "wbWidth" : 12,
 
     "numROBEntries" : 720,
     
-    "LQEntries" : 48,
-    "SQEntries" : 48,
+    "LQEntries" : 196,
+    "SQEntries" : 64,
 
     "numPhysIntRegs" : 228,
     "numPhysFloatRegs" : 240
