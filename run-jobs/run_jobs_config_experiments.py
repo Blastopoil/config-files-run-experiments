@@ -167,8 +167,8 @@ def main():
     # porque tu factories.py los usa para cargar la clase correcta de Queue.
     permutations_Queue_entries = (
         {"LQEntries" : 16, "SQEntries" : 16, "numIQEntries": "MediumSonicBOOM"}, # [0] Medium
-        {"LQEntries" : 20, "SQEntries" : 15, "numIQEntries": "SmallO3"}, # [1] Small
-        {"LQEntries" : 48, "SQEntries" : 48, "numIQEntries": "BigO3"} # [2] Big
+        {"LQEntries" : 36, "SQEntries" : 18, "numIQEntries": "SmallO3"}, # [1] Small
+        {"LQEntries" : 196, "SQEntries" : 64, "numIQEntries": "BigO3"} # [2] Big
     )
 
     permutations_registers = (
