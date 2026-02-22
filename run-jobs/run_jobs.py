@@ -93,7 +93,6 @@ def main():
     bp_choices = ["TAGE_SC_L", "TAGE_SC", "TAGE_L", "LocalBP", "BiModeBP", "AlwaysFalseBP", "AlwaysTrueBP", "RandomBP"]
     parser.add_argument(
         "--bp",
-        choices=bp_choices,
         help=f"bp to use of the following: {list(bp_choices)}, if not specified, runs all bps",
         type=str,
     )
