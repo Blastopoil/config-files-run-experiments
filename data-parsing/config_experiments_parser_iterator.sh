@@ -14,7 +14,7 @@ else
     echo "Warning: .env file not found at $ENV_FILE. Please create it with the necessary variables."
 fi
 BASE_DIR=$repo_path
-DATA_SRC_DIR="${BASE_DIR}/1-output-jobs/BaseCPU"
+DATA_SRC_DIR="${BASE_DIR}/1-output-jobs/BaseCPU_config_experiments"
 OUTPUT_DEST_DIR="${BASE_DIR}/2-parser-output"
 
 OUTPUT_FILE="${OUTPUT_DEST_DIR}/config_experiments_data.csv"

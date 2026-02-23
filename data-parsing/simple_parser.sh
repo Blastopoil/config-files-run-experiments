@@ -25,7 +25,7 @@ OUTPUT_DEST_DIR="${BASE_DIR}/2-parser-output"
 # Define the output filename based on the inputs
 # This creates a file like: parsed_results_MediumSonicBOOM_SPEC17.csv
 results_file_name=$(echo $1 | sed -r 's/^1-output-jobs//' | sed s#/#_#g)
-OUTPUT_FILE="${OUTPUT_DEST_DIR}/tagescl_data${results_file_name}.csv"
+OUTPUT_FILE="${OUTPUT_DEST_DIR}/simple_data${results_file_name}.csv"
 
 # --- Validation ---
 # Check if the source directory actually exists
@@ -51,46 +51,56 @@ echo "------------------------------------------------"
 # --- Main Loop ---
 # Iterate through each APP folder inside the specific Config/Benchmark directory
 # We use 'find' with -maxdepth 1 to look only at the immediate app folders (e.g., xz, mcf)
-find "$DATA_SRC_DIR" -maxdepth 1 -mindepth 1 -type d | sort | while read app_dir; do
+find "$DATA_SRC_DIR" -maxdepth 3 -mindepth 3 -type d | sort | while read app_dir; do
     
     # 1. Identify the App Name
     app_name=$(basename "$app_dir")
     stats_file="${app_dir}/stats.txt"
+    config_file="${app_dir}/config.json"
 
-    # 2. Check if stats.txt exists
-    if [ -f "$stats_file" ]; then
-        
-        # 3. Extract Metrics
-        # Extract IPC
-        sim_ipc=$(grep "board.processor.cores.core.ipc" "$stats_file" | tail -n 1 | awk '{print $2}')
-
-        # Extract number of instructions
-        sim_Is=$(grep "simInsts" "$stats_file" | tail -n 1 | awk '{print $2}')
-        
-        # Extract total conditional branch predictions
-        sim_total_cond_preds=$(grep "board.processor.cores.core.branchPred.condPredicted" "$stats_file" | tail -n 1 | awk '{print $2}')
-
-        # Extract conditional branch mispredictions
-        sim_incorrect_cond_preds=$(grep "board.processor.cores.core.branchPred.condIncorrect" "$stats_file" | tail -n 1 | awk '{print $2}')
-
-        # Extract total branch commited mispredicts
-        sim_total_bp_mispredicts=$(grep "mispredictDueToPredictor_0::total" "$stats_file" | tail -n 1 | awk '{print $2}')
-        
-        # Handle missing values
-        sim_ipc=${sim_ipc:-N/A}
-        sim_Is=${sim_Is:-N/A}
-        sim_total_cond_preds=${sim_total_cond_preds:-N/A}
-        sim_incorrect_cond_preds=${sim_incorrect_cond_preds:-N/A}
-        sim_total_bp_mispredicts=${sim_total_bp_mispredicts:-N/A}
-
-
-        # 4. Save to CSV
-        echo "$app_name,$sim_ipc,$sim_Is,$sim_total_cond_preds,$sim_incorrect_cond_preds,$sim_total_bp_mispredicts" >> "$OUTPUT_FILE"
-        echo "Processed App: $app_name"
-        
-    else
-        echo "WARNING: No stats.txt found in app: $app_name"
+    # 2. Check if stats.txt and config.ini exist
+    if [ ! -f "$stats_file" ]; then
+        echo "Warning: stats.txt not found for $app_name at $stats_file. Skipping."
+        continue
     fi
+    if [ ! -f "$config_file" ]; then
+        echo "Warning: config.ini not found for $app_name at $config_file. Skipping."
+        continue
+    fi
+        
+    # 3. Extract Metrics
+    # (from config.json)
+    # Extract cond_bp
+    sim_cond_bp=$(jq -r '.board.processor.cores[0].core.branchPred.conditionalBranchPred.type' "$config_file")
+
+    # (from stats.txt)
+    # Extract IPC
+    sim_ipc=$(grep "board.processor.cores.core.ipc" "$stats_file" | tail -n 1 | awk '{print $2}')
+
+    # Extract number of instructions
+    sim_Is=$(grep "simInsts" "$stats_file" | tail -n 1 | awk '{print $2}')
+    
+    # Extract total conditional branch predictions
+    sim_total_cond_preds=$(grep "board.processor.cores.core.branchPred.condPredicted" "$stats_file" | tail -n 1 | awk '{print $2}')
+
+    # Extract conditional branch mispredictions
+    sim_incorrect_cond_preds=$(grep "board.processor.cores.core.branchPred.condIncorrect" "$stats_file" | tail -n 1 | awk '{print $2}')
+
+    # Extract total branch commited mispredicts
+    sim_total_bp_mispredicts=$(grep "mispredictDueToPredictor_0::total" "$stats_file" | tail -n 1 | awk '{print $2}')
+    
+    # Handle missing values
+    sim_ipc=${sim_ipc:-N/A}
+    sim_Is=${sim_Is:-N/A}
+    sim_total_cond_preds=${sim_total_cond_preds:-N/A}
+    sim_incorrect_cond_preds=${sim_incorrect_cond_preds:-N/A}
+    sim_total_bp_mispredicts=${sim_total_bp_mispredicts:-N/A}
+    sim_cond_bp=${sim_cond_bp:-N/A}
+
+
+    # 4. Save to CSV
+    echo "$sim_cond_bp,$app_name,$sim_ipc,$sim_Is,$sim_total_cond_preds,$sim_incorrect_cond_preds,$sim_total_bp_mispredicts" >> "$OUTPUT_FILE"
+    echo "Processed App: $app_name"
 
 done
 
