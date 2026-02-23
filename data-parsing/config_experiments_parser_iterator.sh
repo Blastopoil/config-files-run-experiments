@@ -82,6 +82,24 @@ find "$DATA_SRC_DIR" -maxdepth 4 -mindepth 4 -type d | sort | while read app_dir
     sim_float_regs=$(jq -r '.board.processor.cores[0].core.numPhysFloatRegs' "$config_file")
     # Extract cond_bp
     sim_cond_bp=$(jq -r '.board.processor.cores[0].core.branchPred.conditionalBranchPred.type' "$config_file")
+    if [ "$sim_cond_bp" == "AlwaysBooleanBP" ]; then
+        always_true=$(jq -r '.board.processor.cores[0].core.branchPred.conditionalBranchPred.alwaysTruePreds' "$config_file")
+        if [ "$always_true" == "true" ]; then
+            sim_cond_bp="AlwaysTrueBP"
+        else
+            sim_cond_bp="AlwaysFalseBP"
+        fi
+    elif [ "$sim_cond_bp" == "TAGE_SC_L_64KB" ]; then
+        disable_loop_pred=$(jq -r '.board.processor.cores[0].core.branchPred.conditionalBranchPred.loop_predictor.disable' "$config_file")
+        disable_sc=$(jq -r '.board.processor.cores[0].core.branchPred.conditionalBranchPred.statistical_corrector.disable' "$config_file")
+        if [ "$disable_loop_pred" == "false" ] && [ "$disable_sc" == "false" ]; then
+            sim_cond_bp="TAGE_SC_L"
+        elif [ "$disable_loop_pred" == "false" ]; then
+            sim_cond_bp="TAGE_SC"
+        elif [ "$disable_sc" == "false" ]; then
+            sim_cond_bp="TAGE_L"
+        fi
+    fi
 
     # (from stats.txt)
     # Extract IPC

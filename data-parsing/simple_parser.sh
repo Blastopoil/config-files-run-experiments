@@ -4,7 +4,7 @@
 # We ensure the user provided both Config and Benchmark names
 if [ "$#" -ne 1 ]; then
     echo "Usage: $0 Folder inside 1-output-jobs/ with all the results "
-    echo "Example: $0 1-output-jobs/MediumSonicBOOM/TAGE_SC_L"
+    echo "Example: $0 1-output-jobs/SmallO3"
     exit 1
 fi
 
@@ -19,7 +19,7 @@ else
     echo "Warning: .env file not found at $ENV_FILE. Please create it with the necessary variables."
 fi
 BASE_DIR=$repo_path
-DATA_SRC_DIR="${BASE_DIR}/${1}/SPEC17"
+DATA_SRC_DIR="${BASE_DIR}/${1}"
 OUTPUT_DEST_DIR="${BASE_DIR}/2-parser-output"
 
 # Define the output filename based on the inputs
@@ -72,6 +72,24 @@ find "$DATA_SRC_DIR" -maxdepth 3 -mindepth 3 -type d | sort | while read app_dir
     # (from config.json)
     # Extract cond_bp
     sim_cond_bp=$(jq -r '.board.processor.cores[0].core.branchPred.conditionalBranchPred.type' "$config_file")
+    if [ "$sim_cond_bp" == "AlwaysBooleanBP" ]; then
+        always_true=$(jq -r '.board.processor.cores[0].core.branchPred.conditionalBranchPred.alwaysTruePreds' "$config_file")
+        if [ "$always_true" == "true" ]; then
+            sim_cond_bp="AlwaysTrueBP"
+        else
+            sim_cond_bp="AlwaysFalseBP"
+        fi
+    elif [ "$sim_cond_bp" == "TAGE_SC_L_64KB" ]; then
+        disable_loop_pred=$(jq -r '.board.processor.cores[0].core.branchPred.conditionalBranchPred.loop_predictor.disable' "$config_file")
+        disable_sc=$(jq -r '.board.processor.cores[0].core.branchPred.conditionalBranchPred.statistical_corrector.disable' "$config_file")
+        if [ "$disable_loop_pred" == "false" ] && [ "$disable_sc" == "false" ]; then
+            sim_cond_bp="TAGE_SC_L"
+        elif [ "$disable_loop_pred" == "false" ]; then
+            sim_cond_bp="TAGE_SC"
+        elif [ "$disable_sc" == "false" ]; then
+            sim_cond_bp="TAGE_L"
+        fi
+    fi
 
     # (from stats.txt)
     # Extract IPC
