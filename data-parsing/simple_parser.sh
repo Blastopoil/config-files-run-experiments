@@ -24,8 +24,8 @@ OUTPUT_DEST_DIR="${BASE_DIR}/2-parser-output"
 
 # Define the output filename based on the inputs
 # This creates a file like: parsed_results_MediumSonicBOOM_SPEC17.csv
-results_file_name=$(echo $1 | sed -r 's/^1-output-jobs//' | sed s#/#_#g)
-OUTPUT_FILE="${OUTPUT_DEST_DIR}/simple_data${results_file_name}.csv"
+results_file_name=$(echo $1 | sed -r 's#^1-output-jobs/##' | sed s#/#_#g)
+OUTPUT_FILE="${OUTPUT_DEST_DIR}/${results_file_name}_simple_data.csv"
 
 # --- Validation ---
 # Check if the source directory actually exists
