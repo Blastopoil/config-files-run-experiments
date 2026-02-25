@@ -270,8 +270,9 @@ def main():
 
                                 # Estructura de salida:
                                 # 1-output-jobs / CONFIG_NAME / BP / BENCHMARK / APP
+                                config_name_output = config_name + "_config_experiments"
                                 output_dir = create_directory(
-                                    os.path.join(base_output_dir, config_name, dir_suffix, bp, benchmark, app),
+                                    os.path.join(base_output_dir, config_name_output, dir_suffix, bp, benchmark, app),
                                     clean_if_exists=True
                                 )
                                 

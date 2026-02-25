@@ -3,6 +3,7 @@
 suppressPackageStartupMessages({
   library(optparse)
   library(corrplot)
+  library(glue)
 })
 
 # --- 1. Arguments ---
@@ -37,7 +38,6 @@ all_data <- rbind(all_data, temp_data)
 # Filters the Branch Predictors
 if (!is.null(opt$predictors) && nzchar(opt$predictors)) {
   predictors_filtrar <- trimws(strsplit(opt$predictors, ",")[[1]])
-  predictors_filtrar[predictors_filtrar == "TAGE_SC_L"] <- "TAGE_SC_L_64KB"
   all_data <- all_data[all_data$cond_bp %in% predictors_filtrar, ]
 }
 
@@ -73,9 +73,47 @@ if (!is.null(opt$apps) && nzchar(opt$apps)) {
 
 # Calculates new data
 
+to_numeric_checked <- function(df, cols, max_examples = 10) {
+  for (col in cols) {
+    raw <- df[[col]]
+    raw_chr <- trimws(as.character(raw))
+    cleaned <- gsub(",", "", raw_chr)
+
+    num <- suppressWarnings(as.numeric(cleaned))
+
+    # Valores no vacíos que no pudieron convertirse
+    bad_idx <- !is.na(raw) & nzchar(raw_chr) & is.na(num)
+    if (any(bad_idx)) {
+      bad_vals <- unique(raw_chr[bad_idx])
+      cat(sprintf(
+        "[WARN] Columna '%s': %d valor(es) no numérico(s). Ejemplos: %s\n",
+        col,
+        sum(bad_idx),
+        paste(utils::head(bad_vals, max_examples), collapse = ", ")
+      ))
+    }
+
+    df[[col]] <- num
+  }
+  df
+}
+
+numeric_cols <- c(
+  "wrong_cond_predicts", "total_cond_predicts", "Sim_Is", "IPC",
+  "frontend_width", "backend_width", "commit_width", "rob_entries",
+  "lq_entries", "sq_entries", "iq_entries", "int_regs", "float_regs"
+)
+
+missing_cols <- setdiff(numeric_cols, names(all_data))
+if (length(missing_cols) > 0) {
+  stop(sprintf("Missing required columns: %s", paste(missing_cols, collapse = ", ")))
+}
+
+all_data <- to_numeric_checked(all_data, numeric_cols)
+
 all_data$MissRate <- 100 * all_data$wrong_cond_predicts / all_data$total_cond_predicts
 all_data$MPKI <- 1000 * all_data$wrong_cond_predicts / all_data$Sim_Is
-
+#print(all_data)
 op <- NULL
 if (opt$operation == "cor") {
   op <- function(x, y) {
@@ -177,4 +215,31 @@ plot_data <- correlation_matrix
 #corrplot(plot_data, method = "color", col = gray(seq(0,1,length=100)))
 
 # From https://cran.r-project.org/web/packages/corrplot/vignettes/corrplot-intro.html
-corrplot(plot_data, method = 'number') # colorful number
+#corrplot(plot_data, method = 'number') # colorful number
+
+
+png(glue("matrix_correlation_{opt$operation}_{opt$predictors}.png"), width = 2200, height = 1700, res = 220)
+
+my_title <- switch(opt$operation,
+  "cor" = glue("Correlation Matrix - {opt$predictors}"),
+  "mean" = glue("Mean Correlation Matrix - {opt$predictors}"),
+  "fisher" = glue("Fisher's Z Mean Correlation Matrix - {opt$predictors}"),
+  "median" = glue("Median Correlation Matrix - {opt$predictors}"),
+  opt$operation
+)
+# Escala global de texto (afecta título, labels, leyenda, etc.)
+par(cex = 1.15, cex.main = 1.5)
+corrplot(
+  plot_data,
+  method = "color",
+  col = colorRampPalette(c("#2166AC", "#F7F7F7", "#B2182B"))(200),
+  addCoef.col = "black",   # números siempre en negro
+  number.cex = 1.0,        # tamaño de números
+  tl.col = "black",        # etiquetas filas/columnas
+  tl.cex = 1.1,
+  cl.cex = 1.0,
+  mar = c(1, 1, 2, 1),
+  title = my_title
+)
+
+dev.off()
