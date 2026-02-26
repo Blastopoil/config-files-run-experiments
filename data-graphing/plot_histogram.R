@@ -8,6 +8,7 @@ suppressPackageStartupMessages({
   library(paletteer)
   library(dplyr)
   library(glue)
+  library(svglite)
 })
 
 # --- 1. Arguments ---
@@ -15,7 +16,7 @@ option_list <- list(
   make_option(c("-i", "--input"), type="character", default="./2-parser-output",
               help="Carpeta de entrada [default %default]", metavar="DIR"),
   
-  make_option(c("-o", "--output"), type="character", default="grafico.png",
+  make_option(c("-o", "--output"), type="character", default="grafico.svg",
               help="Nombre base del archivo de salida. En modo batch se añade el sufijo _APPNUM [default %default]", metavar="FILE"),
   
   make_option(c("-m", "--metric"), type="character", default="IPC",
@@ -28,7 +29,7 @@ option_list <- list(
               help="Filters specific SPEC17 rate apps (none if not passed).\n\t\t'int' uses all SPEC17int apps\n\t\t'float' the SPEC17float apps\n\t\t'normal' a custom set of apps", metavar="LIST"),
   
   make_option(c("-M", "--mode"), type="character", default="mean",
-              help="'mean': makes the mean of the data\n\t\t'separate': makes a single plot where each apps results gets its bar\n\t\t'batch': makes a plot for each apps result"),
+              help="'mean': makes the mean of the data\n\t\t'separate': makes a single plot where each apps results gets its bar\n\t\t'batch': makes a plot for each apps result\n\t\t'series': makes plot with bar per app result and one final bar with mean"),
 
   make_option(c("-C", "--compare"), type="character", default="bp",
               help="Attention! This argument is only used in 'separate' mode (not activated by default)\n\t\t'bp': groups bars by predictor\n\t\t'config': groups bars by core config\n\t\t'app': groups bars by app")
@@ -64,6 +65,9 @@ if (!is.null(opt$predictors) && nzchar(opt$predictors)) {
 }
 
 # Filters the SPEC17 apps
+all_data <- all_data %>%
+  mutate(App = str_remove(App, "_r$"))
+
 apps_to_filter <- NULL
 aux_apps <- opt$apps
 if (!is.null(opt$apps)) {
@@ -79,12 +83,12 @@ if (!is.null(opt$apps)) {
 }
 apps_to_filter <- trimws(strsplit(aux_apps, ",")[[1]])
 spec17_app_map <- c(
-  "500" = "500.perlbench_r", "502" = "502.gcc_r", "503" = "503.bwaves_r", "505" = "505.mcf_r", 
-  "507" = "507.cactuBSSN_r", "508" = "508.namd_r", "510" = "510.parest_r", "511" = "511.povray_r", 
-  "519" = "519.lbm_r", "520" = "520.omnetpp_r", "521" = "521.wrf_r", "523" = "523.xalancbmk_r", 
-  "525" = "525.x264_r", "526" = "526.blender_r", "527" = "527.cam4_r", "531" = "531.deepsjeng_r",
-  "538" = "538.imagick_r", "541" = "541.leela_r", "544" = "544.nab_r", "548" = "548.exchange2_r", 
-  "549" = "549.fotonik3d_r", "554" = "554.roms_r", "557" = "557.xz_r"
+  "500" = "500.perlbench", "502" = "502.gcc", "503" = "503.bwaves", "505" = "505.mcf", 
+  "507" = "507.cactuBSSN", "508" = "508.namd", "510" = "510.parest", "511" = "511.povray", 
+  "519" = "519.lbm", "520" = "520.omnetpp", "521" = "521.wrf", "523" = "523.xalancbmk", 
+  "525" = "525.x264", "526" = "526.blender", "527" = "527.cam4", "531" = "531.deepsjeng",
+  "538" = "538.imagick", "541" = "541.leela", "544" = "544.nab", "548" = "548.exchange2", 
+  "549" = "549.fotonik3d", "554" = "554.roms", "557" = "557.xz"
 )
 # Converts to full app name
 apps_to_filter <- ifelse(
@@ -125,14 +129,14 @@ if (!is.null(opt$apps)) {
 
 # For the scale
 get_limit <- function(mode, limit) {
-  if (mode == "mean") {
+  if (mode == "mean" ) {
     limit
   } else {
     NULL
   }
 }
 get_breaks <- function(mode, breaks) {
-  if (mode == "mean") {
+  if (mode == "mean" || mode == "series") {
     breaks
   } else {
     NULL
@@ -154,7 +158,7 @@ get_scale <- function(mode) {
   } else if (opt$metric == "MPKI") {
     scale <- scale_y_continuous(# Líneas principales cada 0.5 unidades
                       limits = get_limit(opt$mode, c(-1, 90)),
-                      breaks = get_breaks(opt$mode, seq(0, 90, by = 10)),
+                      breaks = get_breaks(opt$mode, seq(0, 180, by = 10)),
                       # Líneas finas cada 0.1 unidades para lectura precisa
                       minor_breaks = seq(0, 4, by = 0.1), 
                       # Hace que las barras toquen el eje X (mult = c(abajo, arriba))
@@ -201,8 +205,6 @@ if (opt$mode == "mean" && (length(apps_to_filter) > 1 || is.null(opt$apps))) {
     my_title = glue("Relation between {opt$metric} and configurations using these SPEC17 apps:")
     my_subtitle = glue("{apps_studied}")
   }
-
-
 
   # The actual figure creation
   ggplot(my_sum, aes(x=group_label, y=mean, fill=config)) +
@@ -360,6 +362,82 @@ if (opt$mode == "mean" && (length(apps_to_filter) > 1 || is.null(opt$apps))) {
     ggsave(output_file, width=10, height=6)
   }
 
+
+} else if (opt$mode == "series" && length(apps_to_filter) > 1) {
+
+  # 1. Calcula el promedio métrico agrupando por App, config y predictor
+  app_sum <- all_data %>%
+  group_by(App, config, cond_bp) %>%
+  summarise( 
+      n = n(),
+      mean = mean(.data[[opt$metric]]),
+      .groups = "drop"
+  )
+
+  # 2. Calcula el promedio general (Mean) para cada combinación config + predictor
+  mean_sum <- all_data %>%
+  group_by(config, cond_bp) %>%
+  summarise( 
+      n = n(),
+      mean = mean(.data[[opt$metric]]),
+      .groups = "drop"
+  ) %>%
+  mutate(App = "Average") # Because it has no App tag
+
+  # 3. Unimos ambos conjuntos de datos
+  my_sum <- bind_rows(app_sum, mean_sum)
+
+  # 4. Aseguramos el orden del eje X para que "Mean" siempre salga a la derecha del todo
+  app_levels <- c(unique(app_sum$App), "Average")
+  my_sum$App <- factor(my_sum$App, levels = app_levels)
+
+  # 5. Creamos la etiqueta que diferenciará las barras (Config + BP)
+  my_sum <- my_sum %>%
+  mutate(fill_label = paste(config, cond_bp, sep="\n"))
+
+  # Títulos
+  my_title = glue("Relation between {opt$metric} and configurations per SPEC17 App plus their average")
+  my_subtitle = "Includes an overall 'Mean' of the selected applications"
+
+  # The title and subtitle for the plot
+  if (is.null(opt$apps)) {
+    my_title = glue("Relation between {opt$metric} and configurations per SPEC17 App plus their average")
+  } else {
+    my_title = glue("Relation between {opt$metric} and configurations using these SPEC17 apps:")
+    my_subtitle = glue("{apps_studied}")
+  }
+
+  # 6. Creación del gráfico
+  ggplot(my_sum, aes(x=App, y=mean, fill=fill_label)) +
+  scale_fill_paletteer_d("nationalparkcolors::Arches") +
+  geom_bar(stat="identity", position=position_dodge(width=0.8), 
+           width=0.7, 
+           # Contorno negro para definir la barra
+           color = "black",
+           # Grosor del contorno
+           linewidth = 0.3,
+           # Un poco de transparencia para suavizar el tono)
+           #alpha = 0.85
+          ) +
+  labs(title=my_title, subtitle=my_subtitle, y=opt$metric, x="Application", fill="Core + Branch Predictor") +
+  theme_bw() + 
+  theme(text = element_text(family = "sans", size = 18),
+        # Rejilla principal muy tenue
+        panel.grid.major = element_line(color = "grey90"),
+        # Elimina rejilla secundaria
+        panel.grid.minor = element_blank(),
+        plot.title = element_text(size=18, face="bold", margin=margin(b=10), hjust=0.5),
+        plot.subtitle = element_text(size=16, face="bold", hjust=0.5),
+        #axis.text.x  = element_text(size=14, angle=45, hjust=1),
+        axis.title.x = element_text(margin = margin(t = 10)),  # separa el título de las etiquetas
+        # Mover la leyenda arriba
+        legend.position = "top"
+       ) +
+  get_scale(opt$mode)
+
+  # Guardamos el gráfico con un ancho mayor para acomodar todas las apps cómodamente
+  ggsave(opt$output, width=18, height=7)
+  system(paste("xdg-open", opt$output))
 
 } else {
   print("Something went wrong with the mode and/or the app selection, no graphs generated")
