@@ -1,12 +1,11 @@
 """ Example use: 
 ~/gem5/build/RISCV/gem5.opt \
--re --outdir=/nfs/home/ce/felixfdec/gem5/config-files-run-experiments/1-output-jobs/Splash-4/RADIX \
+--outdir=/nfs/home/ce/felixfdec/gem5/config-files-run-experiments/improv-output \
 /nfs/home/ce/felixfdec/gem5/config-files-run-experiments/config-files/launch_fs_from_ckpt.py \
---config MediumSonicBOOM \
---disk_image /nfs/home/ce/felixfdec/riscv-ubuntu-gem5-appsSmall.img \
---mem_size 2 \
---ckpt_path /nfs/shared/ce/gem5/ckpts/RISCV/1core/2GB/Splash-4/ckpt-RADIX \
---num_ticks 100000000000
+--spec_number 507 \
+--config BigO3 \
+--bp TAGE_SC_L \
+--mem_size 4
 """
 # To enable debug flags, add the following gem5 option:
 # --debug-flags=LTage,TageSCL
@@ -24,25 +23,23 @@ from gem5.components.boards.riscv_board import RiscvBoard
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+from SPEC_cmds import *
+
 parser = argparse.ArgumentParser(
     description="gem5 full system simulation configuration"
 )
 
+spec_choices = [ 502, 503, 505, 507, 508, 510, 511, 519, 520, 521, 523, 
+                 526, 527, 531, 541, 544, 548, 549, 554, 557 ]
 parser.add_argument(
-    "--ckpt_path",
-    help="For example: /nfs/shared/ce/gem5/ckpts/RISCV/1core/2GB/Splash-4/ckpt-RADIX",
-    type=str,
+    "--spec_number",
+    choices=spec_choices,
+    type=int,
     required=True,
+    help=f"SPEC17 app identification's tag: {list(spec_choices)}"
 )
 
-parser.add_argument(
-    "--disk_image_path",
-    type=str,
-    default= "/nfs/home/ce/felixfdec/riscv-ubuntu-gem5-appsSmall.img",
-    help="Full path to disk image",
-)
-
-config_choices = ["MediumSonicBOOM_TAGE_SC_L", "MediumSonicBOOM_TAGE_L", "MediumSonicBOOM_TAGE_SC"]
+config_choices = ["MediumSonicBOOM", "SmallO3", "BigO3", "BaseCPU", "CVA6"]
 parser.add_argument(
     "--config",
     choices=config_choices,
@@ -51,9 +48,18 @@ parser.add_argument(
     required=True,
 )
 
+bp_choices = ["TAGE_SC_L", "TAGE_SC", "TAGE_L", "LocalBP", "BiModeBP", "AlwaysFalseBP", "AlwaysTrueBP", "RandomBP"]
+parser.add_argument(
+    "--bp",
+    choices=bp_choices,
+    help=f"bp to use of the following: {list(bp_choices)}",
+    type=str,
+    required=True,
+)
+
 parser.add_argument(
     "--mem_size",
-    choices=[2, 4],
+    choices=[4],
     type=int,
     required=True,
     help="Memory size in GiB (must match checkpoint's path)",
@@ -66,36 +72,101 @@ parser.add_argument(
     help="Maximum number of ticks to simulate",
 )
 
+parser.add_argument(
+    "--extra_params",
+    type=str,
+    default=None,
+    help="String representation of a dictionary with extra parameters to override in the processor configuration (e.g. '{\"fetchWidth\": 2}' to override fetchWidth to 2)",
+)
+
 args = parser.parse_args()
 mem_size_str = f"{args.mem_size}GiB"
 
+if args.extra_params:
+    if args.config != "BaseCPU":
+        print("At the moment, extra params are to be passed only to the the BaseCPU")
+        exit(1)
+    try:
+        extra_params = eval(args.extra_params)
+        if not isinstance(extra_params, dict):
+            print("ERROR: --extra_params must be a string representation of a dictionary")
+            exit(1)
+    except Exception as e:
+        print(f"ERROR: Failed to parse --extra_params: {e}")
+        exit(1)
+else:
+    extra_params = None
+
+match (args.bp):
+    case "TAGE_SC_L":
+        from sys_config_factory.factories import tage_sc_l_factory
+        bp_factory = tage_sc_l_factory
+    case "TAGE_SC":
+        from sys_config_factory.factories import tage_sc_factory
+        bp_factory = tage_sc_factory
+    case "TAGE_L":
+        from sys_config_factory.factories import tage_l_factory
+        bp_factory = tage_l_factory
+    case "LocalBP":
+        from sys_config_factory.factories import localbp_factory
+        bp_factory = localbp_factory
+    case "BiModeBP":
+        from sys_config_factory.factories import bimodebp_factory
+        bp_factory = bimodebp_factory
+    case "AlwaysFalseBP":
+        from sys_config_factory.factories import falsebp_factory
+        bp_factory = falsebp_factory
+    case "AlwaysTrueBP":
+        from sys_config_factory.factories import truebp_factory
+        bp_factory = truebp_factory
+    case "RandomBP":
+        from sys_config_factory.factories import randombp_factory
+        bp_factory = randombp_factory
+
 match (args.config):
-    case "MediumSonicBOOM_TAGE_SC_L":
-        from sys_config_factory.factories import medium_sonicboom_tage_sc_l_factory
-        sys_config = medium_sonicboom_tage_sc_l_factory(mem_size_str)
-    case "MediumSonicBOOM_TAGE_L":
-        from sys_config_factory.factories import medium_sonicboom_tage_l_factory
-        sys_config = medium_sonicboom_tage_l_factory(mem_size_str)
-    case "MediumSonicBOOM_TAGE_SC":
-        from sys_config_factory.factories import medium_sonicboom_tage_sc_factory
-        sys_config = medium_sonicboom_tage_sc_factory(mem_size_str)
+    case "MediumSonicBOOM":
+        from sys_config_factory.factories import medium_sonicboom_factory
+        sys_config = medium_sonicboom_factory(mem_size_str, bp_factory)
+    case "SmallO3":
+        from sys_config_factory.factories import small_O3_factory
+        sys_config = small_O3_factory(mem_size_str, bp_factory)
+    case "BigO3":
+        from sys_config_factory.factories import big_O3_factory
+        sys_config = big_O3_factory(mem_size_str, bp_factory)
+    case "BaseCPU":
+        from sys_config_factory.factories import base_cpu_factory
+        sys_config = base_cpu_factory(mem_size_str, bp_factory, extra=extra_params)
+    case "CVA6":
+        from sys_config_factory.factories import cva6_factory
+        sys_config = cva6_factory(mem_size_str, bp_factory)
+
+processor=sys_config["processor"]
+processor.cores[0].core.mmu.pmp.pmp_entries = 0
 
 # Board
 board = RiscvBoard(
     clk_freq=sys_config["frequency"],
-    processor=sys_config["processor"],
+    processor=processor,
     memory=sys_config["memory_hierarchy"],
     cache_hierarchy=sys_config["cache_hierarchy"]
 )
 
 # Checkpoint
-ckpt_path = Path(args.ckpt_path)
+ckpt_path_str = fs_ckpt_base_dir + fs_spec_ckpt_dirs[args.spec_number]
+ckpt_path = Path(ckpt_path_str)
 if not ckpt_path.exists():
     print(f"ERROR: Checkpoint path does not exist: {ckpt_path}")
     exit(1)
+print(f"Restoring from checkpoint path: {ckpt_path}")
 
 # Event handlers
-total_works = 1
+if (args.spec_number == 520 or args.spec_number == 531 or args.spec_number == 557):
+    total_works = 10
+elif (args.spec_number == 526 ):
+    total_works = 240
+else:
+    total_works = 1
+
 def handle_workend():
     num_works = 0
     while True:
@@ -118,11 +189,8 @@ def exit_event_handler():
 # Full System
 board.set_kernel_disk_workload(
     bootloader=obtain_resource(resource_id="riscv-bootloader-opensbi-1.3.1"),
-    kernel=obtain_resource(resource_id="riscv-linux-6.5.5-kernel"),
-    disk_image=DiskImageResource(
-        args.disk_image_path,
-        root_partition="1"
-    ),
+    kernel=obtain_resource(resource_id="riscv-linux-6.8.12-kernel"),
+    disk_image=DiskImageResource(local_path=disk_image_path, root_partition="1"),
     checkpoint=ckpt_path,
 )
 
@@ -138,6 +206,7 @@ sim = Simulator(
 )
 
 # Run simulation
+print("================== Starting my Simulation ==================")
 print(f"Starting simulation from checkpoint: {ckpt_path}")
 print(f"Configuration: {args.config}")
 print(f"Running for maximum {args.num_ticks} ticks or {total_works} workend events")

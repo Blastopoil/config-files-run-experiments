@@ -78,6 +78,7 @@ processor = SimpleProcessor(
             isa=ISA.RISCV,
             num_cores=1,
         )
+processor.cores[0].core.mmu.pmp.pmp_entries = 0
 memory = DualChannelDDR4_2400(size="4GiB")
 cache_hierarchy = PrivateL1SharedL2CacheHierarchy(
             l1d_size="64KiB", l1i_size="64KiB", l2_size="1MiB"

@@ -31,14 +31,18 @@ if _repo_env.exists():
 
 SPEC_path = os.getenv("SPEC_path")
 ckpt_path = os.getenv("ckpt_path")
+fs_ckpt_path = os.getenv("fs_ckpt_path")
+fs_disk_image_path = os.getenv("fs_disk_image_path")
 
-if not SPEC_path or not ckpt_path:
+if not SPEC_path or not ckpt_path or not fs_ckpt_path or not fs_disk_image_path:
     raise RuntimeError(
-        "Missing SPEC_path or ckpt_path. Ensure .env is loaded and contains these keys."
+        "Missing a path. Ensure .env is loaded and contains these keys."
     )
 
 spec_base_dir = SPEC_path + "/"
 ckpt_base_dir = ckpt_path + "/"
+fs_ckpt_base_dir = fs_ckpt_path + "/"
+disk_image_path = fs_disk_image_path
 
 spec_app_dirs = {
     500: "500.perlbench_r/", 502: "502.gcc_r/", 503: "503.bwaves_r/",
@@ -137,4 +141,30 @@ spec_ckpt_dirs = {
     549: "ckpt_549.fotonik3d_r",
     554: "ckpt_554.roms_r",
     557: "ckpt_557.xz_r"
+}
+
+fs_spec_ckpt_dirs = {
+    500: "ckpt-500.perlbench_r",
+    502: "ckpt-502.gcc_r",
+    503: "ckpt-503.bwaves_r",
+    505: "ckpt-505.mcf_r",
+    507: "ckpt-507.cactuBSSN_r",
+    508: "ckpt-508.namd_r",
+    510: "ckpt-510.parest_r",
+    511: "ckpt-511.povray_r",
+    519: "ckpt-519.lbm_r",
+    520: "ckpt-520.omnetpp_r",
+    521: "ckpt-521.wrf_r",
+    523: "ckpt-523.xalancbmk_r",
+    525: "ckpt-525.x264_r",
+    526: "ckpt-526.blender_r",
+    527: "ckpt-527.cam4_r",
+    531: "ckpt-531.deepsjeng_r",
+    538: "ckpt-538.imagick_r",
+    541: "ckpt-541.leela_r",
+    544: "ckpt-544.nab_r",
+    548: "ckpt-548.exchange2_r",
+    549: "ckpt-549.fotonik3d_r",
+    554: "ckpt-554.roms_r",
+    557: "ckpt-557.xz_r"
 }

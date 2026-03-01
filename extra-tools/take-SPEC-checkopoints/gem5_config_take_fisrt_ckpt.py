@@ -71,16 +71,16 @@ parser.add_argument(
     "--ckpt_path",
     type=str,
     required=False,
-    default="/nfs/home/ce/felixfdec/ckpts_SPEC_intento_mio/RISCV/felix_SPEC_base2",
+    default="/nfs/home/ce/felixfdec/ckpt_base_fs",
     help="The directory to store the checkpoint.",
 )
 args = parser.parse_args()
-
 processor = SimpleProcessor(
             cpu_type=CPUTypes.ATOMIC,
             isa=ISA.RISCV,
             num_cores=1,
         )
+processor.cores[0].core.mmu.pmp.pmp_entries = 0
 memory = DualChannelDDR4_2400(size="4GiB")
 cache_hierarchy = PrivateL1SharedL2CacheHierarchy(
             l1d_size="64KiB", l1i_size="64KiB", l2_size="1MiB"
@@ -90,6 +90,8 @@ board = RiscvBoard(clk_freq="1.4GHz",
                    processor=processor,
                    memory=memory,
                    cache_hierarchy=cache_hierarchy)
+
+#board.processor.cores[0].core.mmu.pmp.pmp_entries = 0
 
 board.set_kernel_disk_workload(
     bootloader=obtain_resource(resource_id="riscv-bootloader-opensbi-1.3.1"),
@@ -108,11 +110,10 @@ class MiM5CheckpointHandler(CheckpointExitHandler):
 
     @overrides(CheckpointExitHandler)
     def _process(self, simulator: "Simulator") -> None:
-        # Podemos añadir lógica extra antes del checkpoint
-        print(f"Ejecutando lógica personalizada antes del checkpoint...")
-        
-        # Llamamos al comportamiento original de la clase padre
-        super()._process(simulator)
+
+        print("Taking a checkpoint at", args.ckpt_path)
+        simulator.save_checkpoint(args.ckpt_path)
+        print("Done taking a checkpoint")
         
         print(f"Checkpoint guardado en el tick: {simulator.get_current_tick()}")
 
@@ -122,8 +123,6 @@ class MiM5CheckpointHandler(CheckpointExitHandler):
         # Aquí puedes forzar True si quieres que la simulación termine.
         return False
 
-# Instanciamos el handler
-handler_instance = MiM5CheckpointHandler(payload={})
 
 # Creamos el simulador mapeando el evento CHECKPOINT al handler
 simulator = Simulator(
