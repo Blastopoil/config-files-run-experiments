@@ -41,7 +41,8 @@ def generate_sbatch_script(gem5_binary, config_script, spec_dir, app, config, bp
 #SBATCH --exclude=ce210
 #SBATCH --mem-per-cpu={slurm_mem_size}
 #SBATCH --job-name=delay_experiment_{app}_{config}
-#SBATCH --output={output_dir}/slurm-%j.out
+#SBATCH --output={output_dir}/slurm.out
+#SBATCH --error={output_dir}/slurm.err
 
 cd {spec_dir}/{app}
 
@@ -50,7 +51,7 @@ cd {spec_dir}/{app}
     --config {config} \
     --bp {bp} \
     --mem_size {mem_size} \
-    --num_ticks 100000000000 
+    --num_ticks 100000000000 \
     --extra_params "{extra_params_str}"
 """
     
@@ -92,6 +93,13 @@ def main():
     parser.add_argument(
         "--bp",
         help=f"bp to use of the following: {list(bp_choices)}, if not specified, runs all bps",
+        type=str,
+    )
+    delay_choices = ["all", "only_bp"]
+    parser.add_argument(
+        "--delays",
+        help=f"delays set to use: {list(bp_choices)}",
+        required=True,
         type=str,
     )
     args = parser.parse_args()
@@ -153,46 +161,62 @@ def main():
     }
 
     slurm_mem_sizes = {
-        "SPEC17": "5G",
+        "SPEC17": "6G",
     }
     
     ckpt_base_dirs = {
         "SPEC17": os.getenv("ckpt_path") + "/",
     }
 
-    delays = (
-        {"fetchToBacDelay" : 1, "decodeToFetchDelay" : 1, "renameToFetchDelay" : 1, "iewToFetchDelay" : 1, "commitToFetchDelay" : 1,
-         "renameToDecodeDelay" : 1, "iewToDecodeDelay" : 1, "commitToDecodeDelay" : 1,
-         "bacToFetchDelay" : 1, "fetchToDecodeDelay" : 1,
-         "iewToRenameDelay" : 1, "commitToRenameDelay" : 1, "decodeToRenameDelay" : 1,
-         "commitToIEWDelay" : 1, "renameToIEWDelay" : 2, 
-         "issueToExecuteDelay" : 1,
-         "iewToCommitDelay" : 1, "renameToROBDelay" : 1}, # [0] Sin retrasos, configuración base
+    if (args.delays == "all") :
+        delays = (
+            {#"commitToFetchDelay" : 1, # Any backwards delay breaks provokes errors in miscellaneous parts of the pipeline
+            "fetchToDecodeDelay" : 1,
+            "decodeToRenameDelay" : 1,
+            "renameToIEWDelay" : 2, 
+            "issueToExecuteDelay" : 1,
+            "iewToCommitDelay" : 1, "renameToROBDelay" : 1}, # [2] Retrasos de 1 ciclo (o 2 para renameToIEW)
 
-        {"fetchToBacDelay" : 2, "decodeToFetchDelay" : 2, "renameToFetchDelay" : 2, "iewToFetchDelay" : 2, "commitToFetchDelay" : 2,
-         "renameToDecodeDelay" : 2, "iewToDecodeDelay" : 2, "commitToDecodeDelay" : 2,
-         "bacToFetchDelay" : 2, "fetchToDecodeDelay" : 2,
-         "iewToRenameDelay" : 2, "commitToRenameDelay" : 2, "decodeToRenameDelay" : 2,
-         "commitToIEWDelay" : 2, "renameToIEWDelay" : 3,
-         "issueToExecuteDelay" : 2,
-         "iewToCommitDelay" : 2, "renameToROBDelay" : 2}, # [1] Retrasos de 2 ciclos (o 3 para renameToIEW)
-        
-        {"fetchToBacDelay" : 3, "decodeToFetchDelay" : 3, "renameToFetchDelay" : 3, "iewToFetchDelay" : 3, "commitToFetchDelay" : 3,
-         "renameToDecodeDelay" : 3, "iewToDecodeDelay" : 3, "commitToDecodeDelay" : 3,
-         "bacToFetchDelay" : 3, "fetchToDecodeDelay" : 3,
-         "iewToRenameDelay" : 3, "commitToRenameDelay" : 3, "decodeToRenameDelay" : 3,
-         "commitToIEWDelay" : 3, "renameToIEWDelay" : 4,
-         "issueToExecuteDelay" : 3,
-         "iewToCommitDelay" : 3, "renameToROBDelay" : 3}, # [2] Retrasos de 3 ciclos (o 4 para renameToIEW)
+            {#"commitToFetchDelay" : 2, # Any backwards delay breaks provokes errors in miscellaneous parts of the pipeline
+            "fetchToDecodeDelay" : 2,
+            "decodeToRenameDelay" : 2,
+            "renameToIEWDelay" : 3, 
+            "issueToExecuteDelay" : 2,
+            "iewToCommitDelay" : 2, "renameToROBDelay" : 2}, # [2] Retrasos de 2 ciclos (o 3 para renameToIEW)
+            
+            {#"commitToFetchDelay" : 3, # Any backwards delay breaks provokes errors in miscellaneous parts of the pipeline
+            "fetchToDecodeDelay" : 3,
+            "decodeToRenameDelay" : 3,
+            "renameToIEWDelay" : 4, 
+            "issueToExecuteDelay" : 3,
+            "iewToCommitDelay" : 3, "renameToROBDelay" : 3}, # [2] Retrasos de 3 ciclos (o 4 para renameToIEW)
 
-        {"fetchToBacDelay" : 4, "decodeToFetchDelay" : 4, "renameToFetchDelay" : 4, "iewToFetchDelay" : 4, "commitToFetchDelay" : 4,
-         "renameToDecodeDelay" : 4, "iewToDecodeDelay" : 4, "commitToDecodeDelay" : 4,
-         "bacToFetchDelay" : 4, "fetchToDecodeDelay" : 4,
-         "iewToRenameDelay" : 4, "commitToRenameDelay" : 4, "decodeToRenameDelay" : 4,
-         "commitToIEWDelay" : 4, "renameToIEWDelay" : 5,
-         "issueToExecuteDelay" : 4,
-         "iewToCommitDelay" : 4, "renameToROBDelay" : 4} # [3] Retrasos de 4 ciclos (o 5 para renameToIEW)
-    )
+            {#"commitToFetchDelay" : 4, # Any backwards delay breaks provokes errors in miscellaneous parts of the pipeline
+            "fetchToDecodeDelay" : 4,
+            "decodeToRenameDelay" : 4,
+            "renameToIEWDelay" : 5, 
+            "issueToExecuteDelay" : 4,
+            "iewToCommitDelay" : 4, "renameToROBDelay" : 4}, # [3] Retrasos de 4 ciclos (o 5 para renameToIEW)
+        )
+    
+    elif (args.delays == "only_bp") :
+        delays = (
+            #{"commitToFetchDelay" : 1,
+            # "fetchToDecodeDelay" : 1,
+            # "decodeToRenameDelay" : 1,
+            # "renameToIEWDelay" : 2, 
+            # "issueToExecuteDelay" : 1,
+            # "iewToCommitDelay" : 1, "renameToROBDelay" : 1}, # [0] Sin retrasos, configuración base
+
+            {"fetchToDecodeDelay" : 2, "commitToFetchDelay" : 2,
+            }, # [2] Retrasos de 2 ciclos
+            
+            {"fetchToDecodeDelay" : 3, "commitToFetchDelay" : 3,
+            }, # [2] Retrasos de 3 ciclos
+
+            {"fetchToDecodeDelay" : 4, "commitToFetchDelay" : 4,
+            }, # [3] Retrasos de 4 ciclos
+        )
     
     # Base directory for output
     base_output_dir = os.getenv("repo_path") + "/1-output-jobs/BaseCPU_delay_experiments"

@@ -23,7 +23,9 @@ cd ~/Workspaces/SPEC/507.cactuBSSN_r/
 
 """
 # To enable debug flags, add the following gem5 option:
-# --debug-flags=LTage,TageSCL
+# --debug-flags=LTage,TageSCL --debug-file=trace.out
+# --debug-flags=O3PipeView --debug-file=trace.out # For konata
+# --debug-flags=O3PipeView,O3CPUAll --debug-file=trace.out # For konata with dependencies
 
 import argparse
 from pathlib import Path
