@@ -16,7 +16,7 @@ option_list <- list(
   make_option(c("-i", "--input"), type="character", default="./2-parser-output",
               help="Carpeta de entrada [default %default]", metavar="DIR"),
   
-  make_option(c("-o", "--output"), type="character", default="grafico.svg",
+  make_option(c("-o", "--output"), type="character", default="grafico.png",
               help="Nombre base del archivo de salida. En modo batch se añade el sufijo _APPNUM [default %default]", metavar="FILE"),
   
   make_option(c("-m", "--metric"), type="character", default="IPC",
@@ -50,7 +50,15 @@ if(length(files) == 0) stop("No .csv file was found")
 all_data <- data.frame()
 
 for (file in files) { 
-    temp_data <- read.csv(file, stringsAsFactors = FALSE)
+    temp_data <- read.csv(
+      file,
+      stringsAsFactors = FALSE,
+      na.strings = c("N/A")
+    )
+
+    # Excluye filas que tengan NA en cualquier columna (incluye las que venían como "N/A")
+    temp_data <- temp_data[complete.cases(temp_data), ]
+
     temp_data$config <- str_remove(basename(file), "_simple_data.csv")
     all_data <- rbind(all_data, temp_data)
 }
@@ -237,7 +245,7 @@ if (opt$mode == "mean" && (length(apps_to_filter) > 1 || is.null(opt$apps))) {
   
   
   ggsave(opt$output, width=10, height=6)
-  #system(paste("xdg-open", opt$output))
+  system(paste("xdg-open", opt$output))
 
 
 } else if (opt$mode == "separate" && (length(apps_to_filter) > 1 || is.null(opt$apps))) {

@@ -26,13 +26,25 @@ option_list <- list(
               help="Predictors (ex: 'TAGE_L,LocalBP') [default %default]", metavar="LIST"),
   
   make_option(c("-M", "--Mode"), type="character", default="ggplot",
-              help="'ggplot': uses ggplot to make the plots\n\t\t'ggstatsplot': uses ggbetweenstats to make the plots\n\t\t[default %default]"),
+              help="'ggplot': makes violin plot\n\t\t'ggplot2': makes violoin + jitter + box plot\n\t\t[default %default]"),
   
-  make_option(c("-A", "--App_Group"), type="character", default="IPC",
-              help="Attention! This argument is only used in 'ggstatsplot' mode [default %default]", metavar="STR")
+  make_option(c("-a", "--apps"), type="character", default=NULL,
+              help="Attention! This argument is only used in 'ggstatsplot' mode [default %default]", metavar="STR"),
+  
+  make_option(c("-g", "--grouping"), type="character", default="config",
+              help="How to group the data. 'config' groups by config, 'bp' groups by predictor[default %default]", metavar="STR")
 )
 
 opt <- parse_args(OptionParser(option_list=option_list))
+
+
+if (is.null(opt$apps) || opt$apps == "all") {
+  opt$apps <- "All SPEC17 Apps"
+} else if (opt$apps == "int") {
+  opt$apps <- "SPEC17 Integer"
+} else if (opt$apps == "float") {
+  opt$apps <- "SPEC17 Floating Point"
+}
 
 # --- 2. Load Data ---
 files <- list.files(
@@ -45,8 +57,17 @@ if(length(files) == 0) stop("No .csv file was found")
 
 all_data <- data.frame()
 
+
 for (file in files) { 
-    temp_data <- read.csv(file, stringsAsFactors = FALSE)
+    temp_data <- read.csv(
+      file,
+      stringsAsFactors = FALSE,
+      na.strings = c("N/A")
+    )
+
+    # Excluye filas que tengan NA en cualquier columna (incluye las que venían como "N/A")
+    temp_data <- temp_data[complete.cases(temp_data), ]
+
     temp_data$config <- str_remove(basename(file), "_simple_data.csv")
     all_data <- rbind(all_data, temp_data)
 }
@@ -167,9 +188,20 @@ get_y <- function() {
     }
 }
 get_palette <- function() {
-    #"nationalparkcolors::Arches" # para 2 y para 3
+    "nationalparkcolors::Arches" # para 2 y para 3
     #"awtools::ppalette" # parece de payaso, pero sirve para muchos grupos
-    "feathers::bee_eater"
+    #"feathers::bee_eater"
+}
+get_average_function <- function() {
+    if (opt$metric == "IPC") {
+        function(x) exp(mean(log(x)))
+    } else if (opt$metric == "MPKI") {
+        mean
+    } else if (opt$metric == "CondMissRate") {
+        mean
+    } else {
+        stop(paste("Metric not found:", opt$metric))
+    }
 }
 
 if (opt$Mode == "ggplot") {
@@ -210,81 +242,24 @@ if (opt$Mode == "ggplot") {
     system(paste("xdg-open", opt$output))
 
 
-} else if (opt$Mode == "ggstatsplot") {
-
-    metric_sym <- rlang::sym(opt$metric)
-
-    # Filters the App Group
-    if (!is.null(opt$App_Group) && nzchar(opt$App_Group)) {
-        app_groups_filter <- trimws(strsplit(opt$App_Group, ",")[[1]])
-        all_data <- all_data[all_data$App_Group %in% app_groups_filter, ]
-    }
-
-    # Label to filter by config and conditional branch predictor
-    all_data <- all_data %>%
-    mutate(group_label = paste(config, cond_bp, sep="\n"))
-
-    app_levels <- c(unique(all_data$App_Group), "Average")
-    all_data$App_Group <- factor(all_data$App_Group, levels = app_levels)
-
-    # The title and subtitle for the plot
-    my_title = "Dispersion of the different SPEC apps"
-    my_subtitle = NULL
-
-    # The actual figure creation
-
-    plt <- ggbetweenstats(
-        data = all_data,
-        x = group_label,
-        y = !!metric_sym,
-        results.subtitle = FALSE,      # Quita el test estadístico superior (F, p-valor)
-        bf.message = FALSE,            # Quita el factor bayesiano inferior derecho
-        centrality.plotting = TRUE,   # Quita el punto rojo grande y la caja con la media
-        pairwise.comparisons = FALSE)   # Quita las anotaciones del eje Y derecho)
-    plt <- plt + 
-        # Add labels and title
-        labs(
-            x = "Configuration and Branch Predictor",
-            y = opt$metric,
-            title = "Distribution of metric across different configurations and branch predictors"
-        ) + 
-        # Customizations
-        theme(
-            # This is the new default font in the plot
-            text = element_text(family = "Roboto", size = 8, color = "black"),
-            plot.title = element_text(
-            family = "Lobster Two", 
-            size = 20,
-            face = "bold",
-            color = "#2a475e"
-            ),
-            # Statistical annotations below the main title
-            plot.subtitle = element_text(
-            family = "Roboto", 
-            size = 15, 
-            face = "bold",
-            color="#1b2838"
-            ),
-            plot.title.position = "plot", # slightly different from default
-            axis.text = element_text(size = 10, color = "black"),
-            axis.title = element_text(size = 12)
-        )
-    
-
-    ggsave(opt$output, width=10, height=6)
-    system(paste("xdg-open", opt$output))
-
 } else if (opt$Mode == "ggplot2") {
 
     # Filters the App Group
-    if (!is.null(opt$App_Group) && nzchar(opt$App_Group)) {
-        app_groups_filter <- trimws(strsplit(opt$App_Group, ",")[[1]])
-        all_data <- all_data[all_data$App_Group %in% app_groups_filter, ]
+    if (!is.null(opt$apps) && nzchar(opt$apps)) {
+      apps_filter <- trimws(strsplit(opt$apps, ",")[[1]])
+      all_data <- all_data[all_data$App_Group %in% apps_filter, ]
     }
 
     # Label to filter by config and conditional branch predictor
-    all_data <- all_data %>%
-    mutate(group_label = paste(cond_bp, config, sep="\n"))
+    if (opt$grouping == "config") {
+      all_data <- all_data %>%
+      mutate(group_label = paste(config, cond_bp, sep="\n"))
+    } else if (opt$grouping == "bp") {
+      all_data <- all_data %>%
+      mutate(group_label = paste(cond_bp, config, sep="\n"))
+    } else {
+      stop(paste("Grouping not found:", opt$grouping))
+    }
 
     app_levels <- c(unique(all_data$App_Group), "Average")
     all_data$App_Group <- factor(all_data$App_Group, levels = app_levels)
@@ -298,22 +273,29 @@ if (opt$Mode == "ggplot") {
     scale_fill_paletteer_d(get_palette()) +
     geom_violin(position="dodge", alpha=0.5, outlier.colour="transparent") +
     geom_boxplot(width=0.15, alpha = 0.8, color="black", 
-                 outlier.shape = NA) +
+                outlier.shape = NA) +
     geom_jitter(width=0.1, size=2, alpha=0.6, color="black") +
-    labs(title=my_title, subtitle=my_subtitle, y=opt$metric, x="SPEC Apps") +
+    stat_summary(fun = get_average_function(), 
+                geom = "point", 
+                shape = 21,          # Forma 21 es un círculo con borde y relleno
+                size = 4,            # Tamaño grande para que destaque
+                fill = "darkred",    # Relleno rojo oscuro (como en ggstatsplot)
+                color = "white",     # Borde blanco para que resalte sobre el boxplot
+                stroke = 1) +        # Grosor del borde blanco
+    labs(title=my_title, subtitle=my_subtitle, y=opt$metric, x="Core configuration and Branch Predictor") +
     theme_bw() + 
     theme(text = element_text(family = "sans", size = 18),
-        # Rejilla principal muy tenue
-        panel.grid.major = element_line(color = "grey90"),
-        # Elimina rejilla secundaria
-        panel.grid.minor = element_blank(),
-        plot.title = element_text(size=18, face="bold", margin=margin(b=10), hjust=0.5),
-        plot.subtitle = element_text(size=16, face="bold", hjust=0.5),
-        #axis.text.x  = element_text(size=14, angle=45, hjust=1),
-        axis.title.x = element_text(margin = margin(t = 10)),  # separa el título de las etiquetas
-        # Mover la leyenda arriba
-        legend.position = "none"
-        ) +
+      # Rejilla principal muy tenue
+      panel.grid.major = element_line(color = "grey90"),
+      # Elimina rejilla secundaria
+      panel.grid.minor = element_blank(),
+      plot.title = element_text(size=18, face="bold", margin=margin(b=10), hjust=0.5),
+      plot.subtitle = element_text(size=16, face="bold", hjust=0.5),
+      #axis.text.x  = element_text(size=14, angle=45, hjust=1),
+      axis.title.x = element_text(margin = margin(t = 10)),  # separa el título de las etiquetas
+      # Mover la leyenda arriba
+      legend.position = "none"
+      ) +
     get_scale()
 
 
