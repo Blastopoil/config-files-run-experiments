@@ -30,7 +30,7 @@ def create_directory(path, clean_if_exists=False):
 #SBATCH --nodelist=ce209
 def generate_sbatch_script(gem5_binary, config_script, spec_dir, app, config, bp, 
                            output_dir, mem_size, slurm_mem_size):
-    """Generate an sbatch script for running simulation with specific IQ size."""
+    """Generate an sbatch script for running simulation."""
     
     spec_number = app[:3]
     sbatch_content = f"""#!/bin/bash
@@ -38,7 +38,8 @@ def generate_sbatch_script(gem5_binary, config_script, spec_dir, app, config, bp
 #SBATCH --exclude=ce210
 #SBATCH --mem-per-cpu={slurm_mem_size}
 #SBATCH --job-name={app}_{config}
-#SBATCH --output={output_dir}/slurm-%j.out
+#SBATCH --output={output_dir}/slurm.out
+#SBATCH --error={output_dir}/slurm.err
 
 cd {spec_dir}/{app}
 
@@ -96,6 +97,11 @@ def main():
         help=f"bp to use of the following: {list(bp_choices)}, if not specified, runs all bps",
         type=str,
     )
+    parser.add_argument(
+        "--fs",
+        help=f"Makes the simulations be FUll system",
+        type=bool,
+    )
     args = parser.parse_args()
     
     benchmarks = [args.benchmark]
@@ -143,10 +149,11 @@ def main():
         os.environ.setdefault(key, value)
 
     gem5_binary = os.getenv("gem5_path")
-    #gem5_binary = "/nfs/home/ce/felixfdec/gem5/build/RISCV/gem5.opt"
 
-    config_script = os.getenv("repo_path") + "/config-files/launch_se_from_ckpt.py"
-    #config_script = "/nfs/home/ce/felixfdec/gem5/config-files-run-experiments/config-files/launch_se_from_ckpt.py"
+    if (args.fs) :
+        config_script = os.getenv("repo_path") + "/config-files/launch_fs_from_ckpt.py"
+    else :
+        config_script = os.getenv("repo_path") + "/config-files/launch_se_from_ckpt.py"
     
     spec_dir = os.getenv("SPEC_path")
 
@@ -193,10 +200,16 @@ def main():
                         continue
 
                     # Create output directory: config/bp/benchmark/app/
-                    output_dir = create_directory(
-                        os.path.join(base_output_dir, config, bp, benchmark, app),
-                        clean_if_exists=True
-                    )
+                    if (args.fs):
+                        output_dir = create_directory(
+                            os.path.join(base_output_dir, "fs", config, bp, benchmark, app),
+                            clean_if_exists=True
+                        )
+                    else:
+                        output_dir = create_directory(
+                            os.path.join(base_output_dir, config, bp, benchmark, app),
+                            clean_if_exists=True
+                        )
                     
                     # Generate sbatch script
                     sbatch_script = generate_sbatch_script(
