@@ -165,7 +165,7 @@ get_scale <- function(mode) {
     scale
   } else if (opt$metric == "MPKI") {
     scale <- scale_y_continuous(# Líneas principales cada 0.5 unidades
-                      limits = get_limit(opt$mode, c(-1, 90)),
+                      limits = get_limit(opt$mode, c(0, 90)),
                       breaks = get_breaks(opt$mode, seq(0, 180, by = 10)),
                       # Líneas finas cada 0.1 unidades para lectura precisa
                       minor_breaks = seq(0, 4, by = 0.1), 
@@ -175,7 +175,7 @@ get_scale <- function(mode) {
     scale
   } else if (opt$metric == "CondMissRate") {
     scale <- scale_y_continuous(# Líneas principales cada 0.5 unidades
-                      limits = get_limit(opt$mode, c(0, 35)),
+                      limits = get_limit(opt$mode, c(0, 20)),
                       breaks = get_breaks(opt$mode, seq(0, 70, by = 5)), 
                       # Líneas finas cada 0.1 unidades para lectura precisa
                       minor_breaks = seq(0, 4, by = 0.1), 
@@ -226,7 +226,7 @@ if (opt$mode == "mean" && (length(apps_to_filter) > 1 || is.null(opt$apps))) {
            # Un poco de transparencia para suavizar el tono)
            #alpha = 0.85
           ) +
-  geom_errorbar(aes(ymin=mean-ic, ymax=mean+ic), width=0.2, colour="black", alpha=0.9, linewidth=0.4, position=position_dodge(0.7)) +
+  geom_errorbar(aes(ymin=pmax(0.1, mean-ic), ymax=mean+ic), width=0.2, colour="black", alpha=0.9, linewidth=0.4, position=position_dodge(0.7)) +
   labs(title=my_title, subtitle=my_subtitle, y=opt$metric, x="Core + Branch Predictor") +
   theme_bw() + 
   theme(text = element_text(family = "sans", size = 18),
@@ -434,17 +434,26 @@ if (opt$mode == "mean" && (length(apps_to_filter) > 1 || is.null(opt$apps))) {
         panel.grid.major = element_line(color = "grey90"),
         # Elimina rejilla secundaria
         panel.grid.minor = element_blank(),
-        plot.title = element_text(size=18, face="bold", margin=margin(b=10), hjust=0.5),
-        plot.subtitle = element_text(size=16, face="bold", hjust=0.5),
-        #axis.text.x  = element_text(size=14, angle=45, hjust=1),
-        axis.title.x = element_text(margin = margin(t = 10)),  # separa el título de las etiquetas
-        # Mover la leyenda arriba
-        legend.position = "top"
+        
+        # 1. Alineación a la izquierda y sin márgenes extra que empujen el texto
+        plot.title = element_text(size=18, face="bold", hjust=0, margin=margin(b=2)),
+        plot.subtitle = element_text(size=16, face="bold", hjust=0, margin=margin(b=0)),
+        
+        # 2. Configuración de la leyenda
+        legend.position = "top",
+        legend.justification = "right",
+        legend.direction = "horizontal",
+        
+        # 3. El truco: margen negativo superior para que la leyenda suba
+        # Ajusta el -40 según necesites (más negativo = más arriba)
+        legend.margin = margin(t = -30, b = 0),
+        
+        axis.title.x = element_text(margin = margin(t = 10))
        ) +
   get_scale(opt$mode)
 
   # Guardamos el gráfico con un ancho mayor para acomodar todas las apps cómodamente
-  ggsave(opt$output, width=18, height=7)
+  ggsave(opt$output, width=18, height=6)
   system(paste("xdg-open", opt$output))
 
 } else {

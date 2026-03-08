@@ -16,7 +16,7 @@ option_list <- list(
   make_option(c("-i", "--input"), type="character", default="./2-parser-output",
               help="Input folder [default %default]", metavar="DIR"),
   
-  make_option(c("-o", "--output"), type="character", default="grafico.svg",
+  make_option(c("-o", "--output"), type="character", default="grafico.png",
               help="Nombre base del archivo de salida. En modo batch se añade el sufijo _APPNUM [default %default]", metavar="FILE"),
   
   make_option(c("-m", "--metric"), type="character", default="IPC",
@@ -26,14 +26,8 @@ option_list <- list(
               help="Predictors (ex: 'TAGE_L,LocalBP') [default %default]", metavar="LIST"),
   
   make_option(c("-a", "--apps"), type="character", default=NULL,
-              help="Filters specific SPEC17 rate apps (none if not passed).\n\t\t'int' uses all SPEC17int apps\n\t\t'float' the SPEC17float apps\n\t\t'normal' a custom set of apps", metavar="LIST"),
-  
-  make_option(c("-M", "--mode"), type="character", default="mean",
-              help="'mean': makes the mean of the data\n\t\t'separate': makes a single plot where each apps results gets its bar\n\t\t'batch': makes a plot for each apps result\n\t\t'series': makes plot with bar per app result and one final bar with mean"),
-
-  make_option(c("-C", "--compare"), type="character", default="bp",
-              help="Attention! This argument is only used in 'separate' mode (not activated by default)\n\t\t'bp': groups bars by predictor\n\t\t'config': groups bars by core config\n\t\t'app': groups bars by app")
-            
+              help="Filters specific SPEC17 rate apps (none if not passed).\n\t\t'int' uses all SPEC17int apps\n\t\t'float' the SPEC17float apps\n\t\t'normal' a custom set of apps", metavar="LIST")
+              
 )
 
 opt <- parse_args(OptionParser(option_list=option_list))
