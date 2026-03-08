@@ -48,7 +48,9 @@ parser.add_argument(
     required=True,
 )
 
-bp_choices = ["TAGE_SC_L", "TAGE_SC", "TAGE_L", "LocalBP", "BiModeBP", "AlwaysFalseBP", "AlwaysTrueBP", "RandomBP"]
+bp_choices = ["TAGE_SC_L", "TAGE_SC", "TAGE_L", "LTAGE", "LocalBP", "BiModeBP", 
+              "AlwaysFalseBP", "AlwaysTrueBP", "RandomBP", 
+              "TAGE_SC_L_8", "TAGE_SC_8", "TAGE_L_8"]
 parser.add_argument(
     "--bp",
     choices=bp_choices,
@@ -107,6 +109,9 @@ match (args.bp):
     case "TAGE_L":
         from sys_config_factory.factories import tage_l_factory
         bp_factory = tage_l_factory
+    case "LTAGE":
+        from sys_config_factory.factories import l_tage_factory
+        bp_factory = l_tage_factory
     case "LocalBP":
         from sys_config_factory.factories import localbp_factory
         bp_factory = localbp_factory
@@ -122,6 +127,15 @@ match (args.bp):
     case "RandomBP":
         from sys_config_factory.factories import randombp_factory
         bp_factory = randombp_factory
+    case "TAGE_SC_L_8":
+        from sys_config_factory.factories import tage_sc_l_8_factory
+        bp_factory = tage_sc_l_8_factory
+    case "TAGE_SC_8":
+        from sys_config_factory.factories import tage_sc_8_factory
+        bp_factory = tage_sc_8_factory
+    case "TAGE_L_8":
+        from sys_config_factory.factories import tage_l_8_factory
+        bp_factory = tage_l_8_factory
 
 match (args.config):
     case "MediumSonicBOOM":

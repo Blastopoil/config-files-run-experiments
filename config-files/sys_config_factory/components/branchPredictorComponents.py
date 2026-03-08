@@ -1,7 +1,7 @@
 from m5.objects import (
     NULL, 
     SimpleBTB, ReturnAddrStack, BranchPredictor, 
-    TAGEBase, TAGE_SC_L_64KB
+    TAGEBase, TAGE_SC_L_64KB, TAGE_SC_L_8KB
     )
 
 class customBranchPredictor(BranchPredictor):
@@ -41,6 +41,29 @@ class TAGE_L_64K(TAGE_SC_L_64KB):
 class TAGE_SC_64K(TAGE_SC_L_64KB):
     def __init__(self):
         super(TAGE_SC_64K, self).__init__()
+        self.instShiftAmt = 2
+        self.speculativeHistUpdate = True
+
+        self.loop_predictor.disable = True
+
+class TAGE_SC_L_8K(TAGE_SC_L_8KB):
+    def __init__(self):
+        super(TAGE_SC_L_8K, self).__init__()
+        self.instShiftAmt = 2
+        self.speculativeHistUpdate = True
+        self.statistical_corrector.speculativeHistUpdate = True
+
+class TAGE_L_8K(TAGE_SC_L_8KB):
+    def __init__(self):
+        super(TAGE_L_8K, self).__init__()
+        self.instShiftAmt = 2
+        self.speculativeHistUpdate = True
+
+        self.statistical_corrector.disable = True
+
+class TAGE_SC_8K(TAGE_SC_L_8KB):
+    def __init__(self):
+        super(TAGE_SC_8K, self).__init__()
         self.instShiftAmt = 2
         self.speculativeHistUpdate = True
 

@@ -314,6 +314,16 @@ def tage_l_factory():
     branchPred.takenOnlyHistory = True
     return branchPred
 
+def l_tage_factory():
+    from components.branchPredictorComponents import customBranchPredictor
+    from m5.objects import LTAGE
+    branchPred = customBranchPredictor(
+        conditional_predictor=LTAGE()
+    )
+    branchPred.requiresBTBHit = True
+    branchPred.takenOnlyHistory = True
+    return branchPred
+
 def localbp_factory():
     from components.branchPredictorComponents import customBranchPredictor
     from m5.objects import LocalBP
@@ -360,6 +370,33 @@ def randombp_factory():
     from m5.objects import RandomBP
     branchPred = customBranchPredictor(
         conditional_predictor=RandomBP()
+    )
+    branchPred.requiresBTBHit = True
+    branchPred.takenOnlyHistory = True
+    return branchPred
+
+def tage_sc_l_8_factory():
+    from components.branchPredictorComponents import customBranchPredictor, TAGE_SC_L_8K
+    branchPred = customBranchPredictor(
+        conditional_predictor=TAGE_SC_L_8K()
+    )
+    branchPred.requiresBTBHit = True
+    branchPred.takenOnlyHistory = True
+    return branchPred
+
+def tage_sc_8_factory():
+    from components.branchPredictorComponents import customBranchPredictor, TAGE_SC_8K
+    branchPred = customBranchPredictor(
+        conditional_predictor=TAGE_SC_8K()
+    )
+    branchPred.requiresBTBHit = True
+    branchPred.takenOnlyHistory = True
+    return branchPred
+
+def tage_l_8_factory():
+    from components.branchPredictorComponents import customBranchPredictor, TAGE_L_8K
+    branchPred = customBranchPredictor(
+        conditional_predictor=TAGE_L_8K()
     )
     branchPred.requiresBTBHit = True
     branchPred.takenOnlyHistory = True
