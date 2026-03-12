@@ -56,7 +56,7 @@ parser.add_argument(
     help=f"SPEC17 app identification's tag: {list(spec_choices)}"
 )
 
-config_choices = ["MediumSonicBOOM", "SmallO3", "BigO3", "BaseCPU", "CVA6"]
+config_choices = ["MediumSonicBOOM", "SmallO3", "BigO3", "BaseCPU", "CVA6", "MinisculeO3"]
 parser.add_argument(
     "--config",
     choices=config_choices,
@@ -102,8 +102,8 @@ args = parser.parse_args()
 mem_size_str = f"{args.mem_size}GiB"
 
 if args.extra_params:
-    if args.config != "BaseCPU":
-        print("At the moment, extra params are to be passed only to the the BaseCPU")
+    if args.config != "BaseCPU" and args.config != "MinisculeO3":
+        print("At the moment, extra params are to be passed only to the the BaseCPU and MinisculeO3")
         exit(1)
     try:
         extra_params = eval(args.extra_params)
@@ -170,6 +170,9 @@ match (args.config):
     case "CVA6":
         from sys_config_factory.factories import cva6_factory
         sys_config = cva6_factory(mem_size_str, bp_factory)
+    case "MinisculeO3":
+        from sys_config_factory.factories import miniscule_O3_factory
+        sys_config = miniscule_O3_factory(mem_size_str, bp_factory)
 
 # Board
 board = RiscvBoard(

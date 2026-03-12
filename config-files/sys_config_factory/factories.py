@@ -287,6 +287,74 @@ def cva6_factory(memory_size, bp_factory):
         "frequency": "3GHz"
     }
 
+def miniscule_O3_factory(memory_size, bp_factory, extra=None):
+    """
+    Generates a system that uses a small O3 processor configuration,
+    L1I/L1D = 32KB, L2 = 256KB and L3 = 2MB
+    """
+    if (memory_size == None):
+        raise ValueError("memory_size must be specified for smallO3 factory")
+
+    from components.memoryComponents import ThreeLevelCacheHierarchy
+    cache_hierarchy_data = {
+        "l1i_assoc": 4,
+        "l1i_size": "32KiB",
+        "l1i_tag_latency": 1,
+        "l1i_data_latency": 1,
+        "l1i_response_latency": 1,
+        "l1d_assoc": 4,
+        "l1d_size": "32KiB",
+        "l1d_tag_latency": 1,
+        "l1d_data_latency": 2,
+        "l1d_response_latency": 1,
+        "l1d_writeback_clean": True,
+        "l2_assoc": 8,
+        "l2_size": "256KiB",
+        "l2_tag_latency": 3,
+        "l2_data_latency": 6,
+        "l2_response_latency": 3,
+        "l3_assoc": 16,
+        "l3_size": "2MiB",
+        "l3_tag_latency": 10,
+        "l3_data_latency": 20,
+        "l3_response_latency": 10,
+    }
+    cache_hierarchy = ThreeLevelCacheHierarchy(**cache_hierarchy_data)
+
+    from gem5.components.memory.multi_channel import DualChannelDDR4_2400
+    memory_hierarchy = DualChannelDDR4_2400(size=memory_size)
+
+    # Doesn't import anything, it's nothing more than an empty dictionary to modify no parametres 
+    # (except the ones passed in extra)
+    from data.miniscule_O3_data import MINISCULE_O3_PROCESSOR_CONFIG
+    processor_config = MINISCULE_O3_PROCESSOR_CONFIG
+    IQ_config = None
+    
+    if extra:
+        processor_config.update(extra)
+        if "numIQEntries" in extra:
+            IQ_config = extra["numIQEntries"]
+            del processor_config["numIQEntries"] # This is not a param of the processor, it's used to determine the IQ config
+    
+    processor = RiscvO3Processor(proc_config=processor_config, num_cores=1)
+    
+    processor.cores[0].core.branchPred = bp_factory()
+    from components.branchPredictorComponents import BTB, RAS
+    from data.miniscule_O3_data import MINISCULE_O3_BTB_CONFIG, MINISCULE_O3_RAS_CONFIG
+    processor.cores[0].core.branchPred.btb = BTB(MINISCULE_O3_BTB_CONFIG)
+    processor.cores[0].core.branchPred.ras = RAS(MINISCULE_O3_RAS_CONFIG)
+
+    from components.queueComponents import smallO3_IQ
+    from data.miniscule_O3_data import MINISCULE_O3_IQ_ENTRIES
+    processor.cores[0].core.instQueues = [smallO3_IQ(MINISCULE_O3_IQ_ENTRIES)]
+
+    return {
+        "processor": processor,
+        "memory_hierarchy": memory_hierarchy,
+        "cache_hierarchy": cache_hierarchy,
+        "frequency": "3GHz"
+    }
+
 def tage_sc_l_factory():
     from components.branchPredictorComponents import customBranchPredictor, TAGE_SC_L_64K
     branchPred = customBranchPredictor(
