@@ -166,7 +166,7 @@ get_scale <- function(mode) {
   } else if (opt$metric == "MPKI") {
     scale <- scale_y_continuous(# Líneas principales cada 0.5 unidades
                       limits = get_limit(opt$mode, c(0, 90)),
-                      breaks = get_breaks(opt$mode, seq(0, 180, by = 10)),
+                      breaks = get_breaks(opt$mode, seq(0, 180, by = 2.5)),
                       # Líneas finas cada 0.1 unidades para lectura precisa
                       minor_breaks = seq(0, 4, by = 0.1), 
                       # Hace que las barras toquen el eje X (mult = c(abajo, arriba))
@@ -176,7 +176,7 @@ get_scale <- function(mode) {
   } else if (opt$metric == "CondMissRate") {
     scale <- scale_y_continuous(# Líneas principales cada 0.5 unidades
                       limits = get_limit(opt$mode, c(0, 20)),
-                      breaks = get_breaks(opt$mode, seq(0, 70, by = 5)), 
+                      breaks = get_breaks(opt$mode, seq(0, 70, by = 2.5)), 
                       # Líneas finas cada 0.1 unidades para lectura precisa
                       minor_breaks = seq(0, 4, by = 0.1), 
                       # Hace que las barras toquen el eje X (mult = c(abajo, arriba))
