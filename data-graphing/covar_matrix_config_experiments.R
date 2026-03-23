@@ -99,7 +99,7 @@ to_numeric_checked <- function(df, cols, max_examples = 10) {
 }
 
 numeric_cols <- c(
-  "wrong_cond_predicts", "total_cond_predicts", "Sim_Is", "IPC",
+  "total_bp_mispredicts", "total_cond_predicts", "Sim_Is", "IPC",
   "frontend_width", "backend_width", "commit_width", "rob_entries",
   "lq_entries", "sq_entries", "iq_entries", "int_regs", "float_regs"
 )

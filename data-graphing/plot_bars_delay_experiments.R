@@ -38,8 +38,7 @@ if(length(file) == 0) stop("No .csv file was found")
 
 all_data <- data.frame()
 
-temp_data <- read.csv(file)
-all_data <- rbind(all_data, temp_data)
+all_data <- read.csv(file, na.strings = c("NA", "NaN", "nan", "NAN", ""))
 
 # --- 3. Data Processing ---
 # Filters data acording to the passed arguments
@@ -88,9 +87,11 @@ all_data <- all_data[all_data$App %in% apps_to_filter, ]
 # Adds columns
 
 all_data <- all_data %>%
-  mutate(MPKI = (wrong_cond_predicts / Sim_Is) * 1000) %>%
-  mutate(CondMissRate = (wrong_cond_predicts / total_cond_predicts) * 100)
-
+  mutate(
+    across(c(Sim_Is, total_cond_predicts, wrong_cond_predicts), ~ suppressWarnings(as.numeric(.x))),
+    MPKI = ifelse(is.finite(wrong_cond_predicts / Sim_Is), 1000 * wrong_cond_predicts / Sim_Is, NA_real_),
+    CondMissRate = ifelse(is.finite(wrong_cond_predicts / total_cond_predicts), 100 * wrong_cond_predicts / total_cond_predicts, NA_real_)
+  )
 
 if (!(opt$metric %in% colnames(all_data))) {
   stop(paste("Métrica no encontrada:", opt$metric))
@@ -116,18 +117,18 @@ if (!is.null(opt$apps)) {
 get_scale <- function() {
   if (opt$metric == "IPC") {
     scale <- scale_y_continuous(# Líneas principales cada 0.5 unidades
-                      limits = c(0, 3),
-                      breaks = seq(0, 4.5, by = 0.5), 
+                      limits = c(0, 1),
+                      breaks = seq(0, 1, by = 0.2), 
                       # Líneas finas cada 0.1 unidades para lectura precisa
-                      minor_breaks = seq(0, 4, by = 0.1), 
+                      minor_breaks = seq(0, 1, by = 0.1), 
                       # Hace que las barras toquen el eje X (mult = c(abajo, arriba))
                       expand = expansion(mult = c(0, 0.05)) 
                       )
     scale
   } else if (opt$metric == "MPKI") {
     scale <- scale_y_continuous(# Líneas principales cada 0.5 unidades
-                      limits = c(-1, 90),
-                      breaks = seq(0, 180, by = 10),
+                      limits = c(0, 2),
+                      breaks = seq(0, 2, by = 0.2),
                       # Líneas finas cada 0.1 unidades para lectura precisa
                       minor_breaks = seq(0, 4, by = 0.1), 
                       # Hace que las barras toquen el eje X (mult = c(abajo, arriba))
@@ -136,8 +137,8 @@ get_scale <- function() {
     scale
   } else if (opt$metric == "CondMissRate") {
     scale <- scale_y_continuous(# Líneas principales cada 0.5 unidades
-                      limits = c(0, 20),
-                      breaks = seq(0, 70, by = 5), 
+                      limits = c(0, 2),
+                      breaks = seq(0, 2, by = 0.2), 
                       # Líneas finas cada 0.1 unidades para lectura precisa
                       minor_breaks = seq(0, 4, by = 0.1), 
                       # Hace que las barras toquen el eje X (mult = c(abajo, arriba))
@@ -148,7 +149,12 @@ get_scale <- function() {
 }
 get_average_function <- function() {
     if (opt$metric == "IPC") {
-        function(x) exp(mean(log(x)))
+        function(x) {
+          x <- suppressWarnings(as.numeric(x))
+          x <- x[is.finite(x) & x > 0]
+          if (length(x) == 0) return(NA_real_)
+          exp(mean(log(x)))
+        }
     } else if (opt$metric == "MPKI") {
         mean
     } else if (opt$metric == "CondMissRate") {
@@ -157,70 +163,70 @@ get_average_function <- function() {
         stop(paste("Metric not found:", opt$metric))
     }
 }
-
-# Creates one plot for all the apps or a set of apps
-if (length(apps_to_filter) > 1 || is.null(opt$apps)) {
-
-  # Label to filter by config and conditional branch predictor
-  all_data <- all_data %>%
-    mutate(group_label = paste(general_delay, cond_bp, sep="\n")) %>%
-    mutate(config_label = paste(cond_bp, sep="\n"))
   
-  # Calculates mean, sd, se and IC
-  my_sum <- all_data %>%
-  group_by(general_delay, group_label, config_label, cond_bp) %>%
-  summarise( 
-      n=n(),
-      mean=get_average_function()(.data[[opt$metric]]),
-      sd=sd(.data[[opt$metric]]),
-      .groups = "drop"
-  ) %>%
-  mutate( se=sd/sqrt(n))  %>%
-  mutate( ic=se * qt((1-0.05)/2 + .5, n-1))
+# Label to filter by config and conditional branch predictor
+all_data <- all_data %>%
+  mutate(
+    delay_label = as.character(general_delay),
+    config_label = paste(cond_bp, sep = "\n")
+  )
 
-  # The title and subtitle for the plot
-  if (is.null(opt$apps)) {
-    my_title = glue("Relation between {opt$metric} and delay")
-    my_subtitle = NULL
-  } else {
-    my_title = glue("Relation between {opt$metric} and delay using these SPEC17 apps:")
-    my_subtitle = glue("{apps_studied}")
-  }
-
-  # The actual figure creation
-  ggplot(my_sum, aes(x=group_label, y=mean, fill=config_label)) +
-  scale_fill_paletteer_d("nationalparkcolors::Arches") +
-  geom_bar(stat="identity", position=position_dodge(width=0.8), 
-           width=0.7, 
-           # Contorno negro para definir la barra
-           color = "black",
-           # Grosor del contorno
-           linewidth = 0.3,
-           # Un poco de transparencia para suavizar el tono)
-           #alpha = 0.85
-          ) +
-  geom_errorbar(aes(ymin=mean-ic, ymax=mean+ic), width=0.2, colour="black", alpha=0.9, linewidth=0.4, position=position_dodge(0.7)) +
-  labs(title=my_title, subtitle=my_subtitle, y=opt$metric, x="Delay & Branch Predictor") +
-  theme_bw() + 
-  theme(text = element_text(family = "sans", size = 18),
-        # Rejilla principal muy tenue
-        panel.grid.major = element_line(color = "grey90"),
-        # Elimina rejilla secundaria
-        panel.grid.minor = element_blank(),
-        plot.title = element_text(size=18, face="bold", margin=margin(b=10), hjust=0.5),
-        plot.subtitle = element_text(size=16, face="bold", hjust=0.5),
-        #axis.text.x  = element_text(size=14, angle=45, hjust=1),
-        axis.title.x = element_text(margin = margin(t = 10)),  # separa el título de las etiquetas
-        # Mover la leyenda arriba
-        legend.position = "top"
-       ) +
-  get_scale()
-  
-  
-  ggsave(opt$output, width=10, height=6)
-  system(paste("xdg-open", opt$output))
-
-
+# Keep delay order numeric when possible
+delay_vals <- unique(all_data$delay_label)
+delay_num <- suppressWarnings(as.numeric(delay_vals))
+if (all(!is.na(delay_num))) {
+  delay_levels <- delay_vals[order(delay_num)]
 } else {
-  print("Something went wrong with the app selection, no graphs generated")
+  delay_levels <- sort(delay_vals)
 }
+
+# Optional: aggregate in case there are repeated rows for same app+delay
+all_data_lines <- all_data %>%
+  mutate(delay_order = match(delay_label, delay_levels)) %>%
+  group_by(App, delay_label, delay_order) %>%
+  summarise(
+    raw_value = get_average_function()(.data[[opt$metric]]),
+    .groups = "drop"
+  ) %>%
+  arrange(App, delay_order) %>%
+  group_by(App) %>%
+  mutate(value = raw_value / first(raw_value)) %>%
+  ungroup()
+
+# The title and subtitle for the plot
+if (is.null(opt$apps)) {
+  my_title = glue("Relation between {opt$metric} and delay using {opt$predictors}")
+  my_subtitle = NULL
+} else {
+  my_title = glue("Relation between {opt$metric} and delay with {opt$predictors} using these SPEC17 apps:")
+  my_subtitle = glue("{apps_studied}")
+}
+
+ggplot(
+  all_data_lines,
+  aes(
+    x = factor(delay_label, levels = delay_levels),
+    y = value,
+    color = App,
+    group = App
+  )
+) +
+geom_line(size = 1) +
+geom_point(size = 3) +
+labs(title = my_title, subtitle = my_subtitle, y = opt$metric, x = "Delay", color = "App") +
+theme_bw() + 
+theme(
+  text = element_text(family = "sans", size = 18),
+  panel.grid.major = element_line(color = "grey90"),
+  panel.grid.minor = element_blank(),
+  plot.title = element_text(size = 18, face = "bold", margin = margin(b = 10), hjust = 0.5),
+  plot.subtitle = element_text(size = 16, face = "bold", hjust = 0.5),
+  axis.text.x = element_text(size = 14, angle = 45, hjust = 1),
+  axis.title.x = element_text(margin = margin(t = 10)),
+  legend.position = "top"
+) +
+get_scale()
+
+
+ggsave(opt$output, width=10, height=6)
+system(paste("xdg-open", opt$output))

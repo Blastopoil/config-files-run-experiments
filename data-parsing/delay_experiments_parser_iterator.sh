@@ -33,7 +33,7 @@ if [ ! -d "$OUTPUT_DEST_DIR" ]; then
 fi
 
 # --- Initialize Output File ---
-echo "general_delay,cond_bp,App,IPC,Sim_Is,total_cond_predicts,wrong_cond_predicts,total_bp_mispredicts" > "$OUTPUT_FILE"
+echo "general_delay,cond_bp,App,IPC,Sim_Is,total_cond_predicts,wrong_cond_predicts" > "$OUTPUT_FILE"
 
 echo "------------------------------------------------"
 echo "Reading from:     $DATA_SRC_DIR"
@@ -92,22 +92,19 @@ find "$DATA_SRC_DIR" -maxdepth 4 -mindepth 4 -type d | sort | while read app_dir
     sim_Is=$(grep "simInsts" "$stats_file" | tail -n 1 | awk '{print $2}')    
     # Extract total conditional branch predictions
     sim_total_cond_preds=$(grep "board.processor.cores.core.branchPred.condPredicted" "$stats_file" | tail -n 1 | awk '{print $2}')
-    # Extract conditional branch mispredictions
-    sim_incorrect_cond_preds=$(grep "board.processor.cores.core.branchPred.condIncorrect" "$stats_file" | tail -n 1 | awk '{print $2}')
-    # Extract total branch commited mispredicts
-    sim_total_bp_mispredicts=$(grep "mispredictDueToPredictor_0::total" "$stats_file" | tail -n 1 | awk '{print $2}')
+    # Extract conditional branch mispredictions due to the conditional predictor
+    sim_incorrect_cond_preds=$(grep "mispredictDueToPredictor_0::DirectCond" "$stats_file" | tail -n 1 | awk '{print $2}')
 
     # Handle missing values
     sim_ipc=${sim_ipc:-N/A}
     sim_Is=${sim_Is:-N/A}
     sim_total_cond_preds=${sim_total_cond_preds:-N/A}
     sim_incorrect_cond_preds=${sim_incorrect_cond_preds:-N/A}
-    sim_total_bp_mispredicts=${sim_total_bp_mispredicts:-N/A}
     sim_general_delay=${sim_general_delay:-N/A}
     sim_cond_bp=${sim_cond_bp:-N/A}
 
     # 4. Append to Output CSV
-    echo "${sim_general_delay},${sim_cond_bp},${app_name},${sim_ipc},${sim_Is},${sim_total_cond_preds},${sim_incorrect_cond_preds},${sim_total_bp_mispredicts}" >> "$OUTPUT_FILE"
+    echo "${sim_general_delay},${sim_cond_bp},${app_name},${sim_ipc},${sim_Is},${sim_total_cond_preds},${sim_incorrect_cond_preds}" >> "$OUTPUT_FILE"
     echo "Processed App: $app_name"
 done
 echo "------------------------------------------------"

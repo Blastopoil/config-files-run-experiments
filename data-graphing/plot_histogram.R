@@ -25,6 +25,9 @@ option_list <- list(
   make_option(c("-p", "--predictors"), type="character", default=NULL,
               help="Predictors (ex: 'TAGE_L,LocalBP') [default %default]", metavar="LIST"),
   
+  make_option(c("-c", "--configs"), type="character", default=NULL,
+            help="Filter core configs (ex: 'BigO3,SmallO3') [default %default]", metavar="LIST"),
+  
   make_option(c("-a", "--apps"), type="character", default=NULL,
               help="Filters specific SPEC17 rate apps (none if not passed).\n\t\t'int' uses all SPEC17int apps\n\t\t'float' the SPEC17float apps\n\t\t'normal' a custom set of apps", metavar="LIST"),
   
@@ -32,7 +35,10 @@ option_list <- list(
               help="'mean': makes the mean of the data\n\t\t'separate': makes a single plot where each apps results gets its bar\n\t\t'batch': makes a plot for each apps result\n\t\t'series': makes plot with bar per app result and one final bar with mean"),
 
   make_option(c("-C", "--compare"), type="character", default="bp",
-              help="Attention! This argument is only used in 'separate' mode (not activated by default)\n\t\t'bp': groups bars by predictor\n\t\t'config': groups bars by core config\n\t\t'app': groups bars by app")
+              help="Attention! This argument is only used in 'separate' mode (not activated by default)\n\t\t'bp': groups bars by predictor\n\t\t'config': groups bars by core config\n\t\t'app': groups bars by app"),
+
+  make_option(c("-v", "--various"), type="character", default="one",
+              help="'two'")
             
 )
 
@@ -72,40 +78,53 @@ if (!is.null(opt$predictors) && nzchar(opt$predictors)) {
   all_data <- all_data[all_data$cond_bp %in% predictors_filter, ]
 }
 
-# Filters the SPEC17 apps
-all_data <- all_data %>%
-  mutate(App = str_remove(App, "_r$"))
-
-apps_to_filter <- NULL
-aux_apps <- opt$apps
-if (!is.null(opt$apps)) {
-  if (opt$apps == "int") {
-    aux_apps <- c("500,502,505,520,523,525,531,541,548,557")
-  } else if (opt$apps == "float") {
-    aux_apps <- c("503,507,508,510,511,519,521,526,527,538,544,549,554")
-  } else if (opt$apps == "normal") {
-    aux_apps <- c("507,508,510,519,521,526,544,548,549,557")
-  } 
-} else {
-  aux_apps <- c("500,502,503,505,507,508,510,511,519,520,521,523,525,526,527,531,538,541,544,548,549,554,557")
+# Filters the core configs
+if (!is.null(opt$configs) && nzchar(opt$configs)) {
+  configs_filter <- trimws(strsplit(opt$configs, ",")[[1]])
+  all_data <- all_data[all_data$config %in% configs_filter, ]
 }
-apps_to_filter <- trimws(strsplit(aux_apps, ",")[[1]])
-spec17_app_map <- c(
-  "500" = "500.perlbench", "502" = "502.gcc", "503" = "503.bwaves", "505" = "505.mcf", 
-  "507" = "507.cactuBSSN", "508" = "508.namd", "510" = "510.parest", "511" = "511.povray", 
-  "519" = "519.lbm", "520" = "520.omnetpp", "521" = "521.wrf", "523" = "523.xalancbmk", 
-  "525" = "525.x264", "526" = "526.blender", "527" = "527.cam4", "531" = "531.deepsjeng",
-  "538" = "538.imagick", "541" = "541.leela", "544" = "544.nab", "548" = "548.exchange2", 
-  "549" = "549.fotonik3d", "554" = "554.roms", "557" = "557.xz"
-)
-# Converts to full app name
-apps_to_filter <- ifelse(
-  apps_to_filter %in% names(spec17_app_map),
-  unname(spec17_app_map[apps_to_filter]),
-  apps_to_filter
-)
-# Makes the actual filtering
-all_data <- all_data[all_data$App %in% apps_to_filter, ]
+
+# Filters the SPEC17 apps
+if (opt$various == "one") {
+  all_data <- all_data %>%
+    mutate(App = str_remove(App, "_r$"))
+
+  apps_to_filter <- NULL
+  aux_apps <- opt$apps
+  if (!is.null(opt$apps)) {
+    if (opt$apps == "int") {
+      aux_apps <- c("500,502,505,520,523,525,531,541,548,557")
+    } else if (opt$apps == "float") {
+      aux_apps <- c("503,507,508,510,511,519,521,526,527,538,544,549,554")
+    } else if (opt$apps == "normal") {
+      aux_apps <- c("507,508,510,519,521,526,544,548,549,557")
+    } else if (opt$apps == "all") {
+      aux_apps <- c("500,502,503,505,507,508,510,511,519,520,521,523,525,526,527,531,538,541,544,548,549,554,557")
+    }
+  } else {
+    aux_apps <- c("500,502,503,505,507,508,510,511,519,520,521,523,525,526,527,531,538,541,544,548,549,554,557")
+  }
+  apps_to_filter <- trimws(strsplit(aux_apps, ",")[[1]])
+  spec17_app_map <- c(
+    "500" = "500.perlbench", "502" = "502.gcc", "503" = "503.bwaves", "505" = "505.mcf", 
+    "507" = "507.cactuBSSN", "508" = "508.namd", "510" = "510.parest", "511" = "511.povray", 
+    "519" = "519.lbm", "520" = "520.omnetpp", "521" = "521.wrf", "523" = "523.xalancbmk", 
+    "525" = "525.x264", "526" = "526.blender", "527" = "527.cam4", "531" = "531.deepsjeng",
+    "538" = "538.imagick", "541" = "541.leela", "544" = "544.nab", "548" = "548.exchange2", 
+    "549" = "549.fotonik3d", "554" = "554.roms", "557" = "557.xz"
+  )
+  # Converts to full app name
+  apps_to_filter <- ifelse(
+    apps_to_filter %in% names(spec17_app_map),
+    unname(spec17_app_map[apps_to_filter]),
+    apps_to_filter
+  )
+  # Makes the actual filtering
+  all_data <- all_data[all_data$App %in% apps_to_filter, ]
+} else {
+  all_data <- all_data %>%
+    mutate(App = str_remove(App, "_r$"))
+}
 
 # Adds columns
 
@@ -118,7 +137,7 @@ if (!(opt$metric %in% colnames(all_data))) {
   stop(paste("Métrica no encontrada:", opt$metric))
 }
 
-print(all_data)
+#print(all_data)
 
 # --- 4. Graph Creation ---
 
@@ -130,8 +149,18 @@ if (!is.null(opt$apps)) {
     apps_studied <- "(Floating Point) 503,507,508,510,511,519,521,526,527,538,544,549,554"
   } else if (opt$apps == "normal") {
     apps_studied <- "507,508,510,519,521,526,544,548,549,557"
+  } else if (opt$apps == "all") {
+    apps_studied <- "500,502,503,505,507,508,510,511,519,520,521,523,525,526,527,531,538,541,544,548,549,554,557"
   } else {
     apps_studied <- paste(apps_to_filter, collapse=", ")
+  }
+} else {
+  if (opt$various == "one"){
+    apps_studied <- paste(apps_to_filter, collapse=", ")
+  } else if (opt$various == "two"){
+    print("jee")
+    apps_studied <- paste(unique(all_data$App), collapse = ", ")
+    apps_to_filter <- unique(all_data$App)
   }
 }
 
@@ -185,6 +214,17 @@ get_scale <- function(mode) {
     scale
   }
 }
+get_average_function <- function() {
+    if (opt$metric == "IPC") {
+        function(x) exp(mean(log(x)))
+    } else if (opt$metric == "MPKI") {
+        mean
+    } else if (opt$metric == "CondMissRate") {
+        mean
+    } else {
+        stop(paste("Metric not found:", opt$metric))
+    }
+}
 
 # Creates one plot for all the apps or a set of apps
 if (opt$mode == "mean" && (length(apps_to_filter) > 1 || is.null(opt$apps))) {
@@ -198,7 +238,7 @@ if (opt$mode == "mean" && (length(apps_to_filter) > 1 || is.null(opt$apps))) {
   group_by(group_label, config, cond_bp) %>%
   summarise( 
       n=n(),
-      mean=mean(.data[[opt$metric]]),
+      mean=get_average_function()(.data[[opt$metric]]),
       sd=sd(.data[[opt$metric]]),
       .groups = "drop"
   ) %>%
@@ -275,7 +315,7 @@ if (opt$mode == "mean" && (length(apps_to_filter) > 1 || is.null(opt$apps))) {
   group_by(group_label, config, cond_bp, App) %>%
   summarise( 
       n=n(),
-      mean=mean(.data[[opt$metric]]),
+      mean=get_average_function()(.data[[opt$metric]]),
       .groups = "drop"
   )
 
@@ -333,7 +373,7 @@ if (opt$mode == "mean" && (length(apps_to_filter) > 1 || is.null(opt$apps))) {
     group_by(group_label, config, cond_bp) %>%
     summarise( 
         n=n(),
-        mean=mean(.data[[opt$metric]]),
+        mean=get_average_function()(.data[[opt$metric]]),
         .groups = "drop"
     )
 
@@ -371,14 +411,14 @@ if (opt$mode == "mean" && (length(apps_to_filter) > 1 || is.null(opt$apps))) {
   }
 
 
-} else if (opt$mode == "series" && length(apps_to_filter) > 1) {
+} else if (opt$mode == "series") {
 
   # 1. Calcula el promedio métrico agrupando por App, config y predictor
   app_sum <- all_data %>%
   group_by(App, config, cond_bp) %>%
   summarise( 
       n = n(),
-      mean = mean(.data[[opt$metric]]),
+      mean = get_average_function()(.data[[opt$metric]]),
       .groups = "drop"
   )
 
@@ -387,7 +427,7 @@ if (opt$mode == "mean" && (length(apps_to_filter) > 1 || is.null(opt$apps))) {
   group_by(config, cond_bp) %>%
   summarise( 
       n = n(),
-      mean = mean(.data[[opt$metric]]),
+      mean = get_average_function()(.data[[opt$metric]]),
       .groups = "drop"
   ) %>%
   mutate(App = "Average") # Because it has no App tag
@@ -453,7 +493,11 @@ if (opt$mode == "mean" && (length(apps_to_filter) > 1 || is.null(opt$apps))) {
   get_scale(opt$mode)
 
   # Guardamos el gráfico con un ancho mayor para acomodar todas las apps cómodamente
-  ggsave(opt$output, width=18, height=6)
+  if (opt$apps == "all" || length(apps_to_filter) > 12) {
+    ggsave(opt$output, width=25, height=6)
+  } else {
+    ggsave(opt$output, width=18, height=6)
+  }
   system(paste("xdg-open", opt$output))
 
 } else {
