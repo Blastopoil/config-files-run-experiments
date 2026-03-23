@@ -69,3 +69,9 @@ class TAGE_SC_8K(TAGE_SC_L_8KB):
 
         self.loop_predictor.disable = True
 
+class TAGE_SC_L_64K_no_speculation(TAGE_SC_L_64KB):
+    def __init__(self):
+        super(TAGE_SC_L_64K_no_speculation, self).__init__()
+        self.instShiftAmt = 2
+        self.speculativeHistUpdate = False
+        self.statistical_corrector.speculativeHistUpdate = False

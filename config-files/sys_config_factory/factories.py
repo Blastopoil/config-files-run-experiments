@@ -469,3 +469,23 @@ def tage_l_8_factory():
     branchPred.requiresBTBHit = True
     branchPred.takenOnlyHistory = True
     return branchPred
+
+def tage_sc_l_no_speculation_factory():
+    from components.branchPredictorComponents import customBranchPredictor, TAGE_SC_L_64K_no_speculation
+    branchPred = customBranchPredictor(
+        conditional_predictor=TAGE_SC_L_64K_no_speculation()
+    )
+    branchPred.requiresBTBHit = True
+    branchPred.takenOnlyHistory = True
+    return branchPred
+
+def localbp_no_speculation_factory():
+    from components.branchPredictorComponents import customBranchPredictor
+    from m5.objects import LocalBP
+    branchPred = customBranchPredictor(
+        conditional_predictor=LocalBP()
+    )
+    branchPred.conditionalBranchPred.speculativeHistUpdate = False
+    branchPred.requiresBTBHit = True
+    branchPred.takenOnlyHistory = True
+    return branchPred

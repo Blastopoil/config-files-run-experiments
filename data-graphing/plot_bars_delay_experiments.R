@@ -137,8 +137,8 @@ get_scale <- function() {
     scale
   } else if (opt$metric == "CondMissRate") {
     scale <- scale_y_continuous(# Líneas principales cada 0.5 unidades
-                      limits = c(0, 2),
-                      breaks = seq(0, 2, by = 0.2), 
+                      limits = c(0.9, 1.1),
+                      breaks = seq(0, 2, by = 0.1), 
                       # Líneas finas cada 0.1 unidades para lectura precisa
                       minor_breaks = seq(0, 4, by = 0.1), 
                       # Hace que las barras toquen el eje X (mult = c(abajo, arriba))

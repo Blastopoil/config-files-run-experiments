@@ -7,7 +7,8 @@ cd ~/SPEC/507.cactuBSSN_r/ (or any other folder of the SPEC app you are going to
 --spec_number 507 \
 --config BigO3 \
 --bp TAGE_SC_L \
---mem_size 4
+--mem_size 4 \
+--num_insts 5000
 
 OR
 
@@ -19,7 +20,8 @@ cd ~/Workspaces/SPEC/507.cactuBSSN_r/
 --spec_number 507 \
 --config BigO3 \
 --bp TAGE_SC_L \
---mem_size 4
+--mem_size 4 \
+--num_insts 5000
 
 """
 # To enable debug flags, add the following gem5 option:
@@ -67,7 +69,8 @@ parser.add_argument(
 
 bp_choices = ["TAGE_SC_L", "TAGE_SC", "TAGE_L", "LTAGE", "LocalBP", "BiModeBP", 
               "AlwaysFalseBP", "AlwaysTrueBP", "RandomBP", 
-              "TAGE_SC_L_8", "TAGE_SC_8", "TAGE_L_8"]
+              "TAGE_SC_L_8", "TAGE_SC_8", "TAGE_L_8",
+              "TAGE_SC_L_no_specul", "LocalBP_no_specul"]
 parser.add_argument(
     "--bp",
     choices=bp_choices,
@@ -162,6 +165,12 @@ match (args.bp):
     case "TAGE_L_8":
         from sys_config_factory.factories import tage_l_8_factory
         bp_factory = tage_l_8_factory
+    case "TAGE_SC_L_no_specul":
+        from sys_config_factory.factories import tage_sc_l_no_speculation_factory
+        bp_factory = tage_sc_l_no_speculation_factory
+    case "LocalBP_no_specul":
+        from sys_config_factory.factories import localbp_no_speculation_factory
+        bp_factory = localbp_no_speculation_factory
 
 match (args.config):
     case "MediumSonicBOOM":
@@ -276,6 +285,9 @@ print(f"Starting simulation from checkpoint: {ckpt_path}")
 print(f"Configuration: {args.config}")
 print(f"Branch Predictor: {args.bp}")
 
+import time
+start = time.perf_counter()
+
 if args.num_ticks:
     print(f"Running for maximum {args.num_ticks} ticks or {total_works} workend events")
     sim.run(args.num_ticks)
@@ -286,6 +298,10 @@ else:
     print(f"Running until exit event or {total_works} workend events")
     sim.run()
 
-print(f"\nSimulation finished:")
+end = time.perf_counter()
+
+print("\n============================================================")
+print(f"Simulation finished:")
+print(f"  Wall-clock runtime: {end - start:.2f} s")
 print(f"  Final tick: {sim.get_current_tick()}")
 print(f"  Exit cause: {sim.get_last_exit_event_cause()}")
