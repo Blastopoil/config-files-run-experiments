@@ -51,8 +51,9 @@ cd {spec_dir}/{app}
     --config {config} \
     --bp {bp} \
     --mem_size {mem_size} \
-    --num_ticks 100000000000 \
-    --extra_params "{extra_params_str}"
+    --extra_params "{extra_params_str}" \
+    --num_insts 550000000
+#   --num_ticks 100000000000 
 """
     
     script_path = os.path.join(output_dir, "run.sbatch")
@@ -98,7 +99,7 @@ def main():
     delay_choices = ["all", "only_bp"]
     parser.add_argument(
         "--delays",
-        help=f"delays set to use: {list(bp_choices)}",
+        help=f"delays set to use: {list(delay_choices)}",
         required=True,
         type=str,
     )
@@ -161,7 +162,7 @@ def main():
     }
 
     slurm_mem_sizes = {
-        "SPEC17": "6G",
+        "SPEC17": "5G",
     }
     
     ckpt_base_dirs = {

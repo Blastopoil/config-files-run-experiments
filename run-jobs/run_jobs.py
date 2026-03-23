@@ -48,7 +48,8 @@ cd {spec_dir}/{app}
     --config {config} \
     --bp {bp} \
     --mem_size {mem_size} \
-    --num_ticks 100000000000 
+    --num_insts 655890000
+#    --num_ticks 100000000000 
 """
     
     script_path = os.path.join(output_dir, "run.sbatch")
@@ -172,7 +173,8 @@ def main():
     }
     
     # Base directory for output
-    base_output_dir = os.getenv("repo_path") + "/1-output-jobs"
+    base_output_dir = os.getenv("repo_path") + "/1-output-jobs_max_insts"
+    #base_output_dir = os.getenv("repo_path") + "/1-output-jobs"
     create_directory(base_output_dir)
     
     submitted_jobs = []
@@ -239,11 +241,13 @@ def main():
                     time.sleep(0.1)
     
     print(f"\n{'='*60}")
-    print(f"Summary: Submitted {len(submitted_jobs)} jobs")
-    print(f"{'='*60}")
     
     for config, bp, benchmark, app, job_id in submitted_jobs:
         print(f"Job {job_id}: {config}/{bp}/{benchmark}/{app}")
+
+    print(f"{'='*60}")
+    print(f"Summary: Submitted {len(submitted_jobs)} jobs")
+    print(f"{'='*60}")
     
     print(f"\nMonitor jobs with: squeue -u $USER")
     print(f"Cancel all jobs with: scancel -u $USER")

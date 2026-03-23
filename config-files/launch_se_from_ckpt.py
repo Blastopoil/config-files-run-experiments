@@ -87,8 +87,13 @@ parser.add_argument(
 parser.add_argument(
     "--num_ticks",
     type=int,
-    default=10000000000,
     help="Maximum number of ticks to simulate",
+)
+
+parser.add_argument(
+    "--num_insts",
+    type=int,
+    help="Maximum number of instructions to simulate. 655890000 is the mean for SPEC17.",
 )
 
 parser.add_argument(
@@ -115,6 +120,10 @@ if args.extra_params:
         exit(1)
 else:
     extra_params = None
+
+if args.num_ticks and args.num_insts:
+    print("ERROR: Cannot specify both --num_ticks and --num_insts at the same time")
+    exit(1)
 
 match (args.bp):
     case "TAGE_SC_L":
@@ -181,6 +190,11 @@ board = RiscvBoard(
     memory=sys_config["memory_hierarchy"],
     cache_hierarchy=sys_config["cache_hierarchy"]
 )
+
+# Limits the number of instructions to execute
+if args.num_insts:
+    for core in board.get_processor().get_cores():
+        core.core.max_insts_any_thread = args.num_insts
 
 # Checkpoint
 ckpt_path_str = ckpt_base_dir + spec_ckpt_dirs[args.spec_number]
@@ -260,9 +274,17 @@ sim = Simulator(
 print("================== Starting my Simulation ==================")
 print(f"Starting simulation from checkpoint: {ckpt_path}")
 print(f"Configuration: {args.config}")
-print(f"Running for maximum {args.num_ticks} ticks or {total_works} workend events")
+print(f"Branch Predictor: {args.bp}")
 
-sim.run(args.num_ticks)
+if args.num_ticks:
+    print(f"Running for maximum {args.num_ticks} ticks or {total_works} workend events")
+    sim.run(args.num_ticks)
+elif args.num_insts:
+    print(f"Running for maximum {args.num_insts} instructions or {total_works} workend events")
+    sim.run()
+else:
+    print(f"Running until exit event or {total_works} workend events")
+    sim.run()
 
 print(f"\nSimulation finished:")
 print(f"  Final tick: {sim.get_current_tick()}")
