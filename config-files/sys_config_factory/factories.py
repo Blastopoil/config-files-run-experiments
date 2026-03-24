@@ -489,3 +489,10 @@ def localbp_no_speculation_factory():
     branchPred.requiresBTBHit = True
     branchPred.takenOnlyHistory = True
     return branchPred
+
+def gshare_factory():
+    from m5.objects import GshareBP
+    branchPred = GshareBP()
+    branchPred.requiresBTBHit = True
+    branchPred.takenOnlyHistory = True
+    return branchPred
