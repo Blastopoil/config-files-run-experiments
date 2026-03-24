@@ -187,7 +187,7 @@ def main():
     bps = ["AlwaysTrueBP", "LocalBP", "TAGE_SC_L", "TAGE_SC_L_no_specul", "LocalBP_no_specul"]
     
     # Base directory for output
-    base_output_dir = os.getenv("repo_path") + "/1-output-jobs/BaseCPU_delay_experiments"
+    base_output_dir = os.getenv("repo_path") + "/1-output-jobs/BaseCPU_speculative_experiments"
     create_directory(base_output_dir)
     
     submitted_jobs = []
