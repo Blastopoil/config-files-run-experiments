@@ -38,10 +38,11 @@ def generate_sbatch_script(gem5_binary, config_script, spec_dir, app, logical_co
     
     sbatch_content = f"""#!/bin/bash
 #SBATCH --partition=ce_200
-#SBATCH --exclude=ce210
+#SBATCH --exclude=ce210,ce208
 #SBATCH --mem-per-cpu={slurm_mem_size}
 #SBATCH --job-name={app}_{logical_config_name}
-#SBATCH --output={output_dir}/slurm-%j.out
+#SBATCH --output={output_dir}/slurm.out
+#SBATCH --error={output_dir}/slurm.err
 
 cd {spec_dir}/{app}
 
@@ -50,8 +51,9 @@ cd {spec_dir}/{app}
     --config BaseCPU \
     --bp {bp} \
     --mem_size {mem_size} \
-    --num_ticks 100000000000 \
-    --extra_params "{extra_params_str}"
+    --extra_params "{extra_params_str}" \
+    --num_insts 550000000
+#    --num_ticks 100000000000
 """
     # Note: We wrap extra_params_str in quotes to handle spaces/brackets in bash
 
