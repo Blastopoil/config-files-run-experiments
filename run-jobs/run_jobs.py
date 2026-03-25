@@ -34,8 +34,8 @@ def generate_sbatch_script(gem5_binary, config_script, spec_dir, app, config, bp
     
     spec_number = app[:3]
     sbatch_content = f"""#!/bin/bash
-#SBATCH --partition=ce_200
-#SBATCH --exclude=ce210
+#SBATCH --partition=ce
+#SBATCH --exclude=ce210,ce208
 #SBATCH --mem-per-cpu={slurm_mem_size}
 #SBATCH --job-name={app}_{config}
 #SBATCH --output={output_dir}/slurm.out
@@ -95,7 +95,7 @@ def main():
     bp_choices = ["TAGE_SC_L", "TAGE_SC", "TAGE_L", "LTAGE", "LocalBP", "BiModeBP", 
                   "AlwaysFalseBP", "AlwaysTrueBP", "RandomBP", 
                   "TAGE_SC_L_8", "TAGE_SC_8", "TAGE_L_8",
-                  "LongGshare", "Gshare", "GshareMod"]
+                  "LongGshare", "Gshare", "GshareMod", "LongGshareMod"]
     parser.add_argument(
         "--bp",
         help=f"bp to use of the following: {list(bp_choices)}, if not specified, runs all bps",

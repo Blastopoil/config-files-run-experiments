@@ -37,7 +37,7 @@ def generate_sbatch_script(gem5_binary, config_script, spec_dir, app, logical_co
     extra_params_str = str(extra_params_dict)
     
     sbatch_content = f"""#!/bin/bash
-#SBATCH --partition=ce_200
+#SBATCH --partition=ce
 #SBATCH --exclude=ce210,ce208
 #SBATCH --mem-per-cpu={slurm_mem_size}
 #SBATCH --job-name={app}_{logical_config_name}

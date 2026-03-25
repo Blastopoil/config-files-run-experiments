@@ -178,6 +178,12 @@ match (args.bp):
     case "LongGshare":
         from sys_config_factory.factories import long_gshare_factory
         bp_factory = long_gshare_factory
+    case "GshareMod":
+        from sys_config_factory.factories import gshare_mod_factory
+        bp_factory = gshare_mod_factory
+    case "LongGshareMod":
+        from sys_config_factory.factories import long_gshare_mod_factory
+        bp_factory = long_gshare_mod_factory
 
 match (args.config):
     case "MediumSonicBOOM":
