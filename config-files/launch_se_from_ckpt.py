@@ -71,7 +71,7 @@ bp_choices = ["TAGE_SC_L", "TAGE_SC", "TAGE_L", "LTAGE", "LocalBP", "BiModeBP",
               "AlwaysFalseBP", "AlwaysTrueBP", "RandomBP", 
               "TAGE_SC_L_8", "TAGE_SC_8", "TAGE_L_8",
               "TAGE_SC_L_no_specul", "LocalBP_no_specul",
-              "gshare", "gshare_mod"]
+              "LongGshare", "Gshare", "GshareMod"]
 parser.add_argument(
     "--bp",
     choices=bp_choices,
@@ -172,9 +172,12 @@ match (args.bp):
     case "LocalBP_no_specul":
         from sys_config_factory.factories import localbp_no_speculation_factory
         bp_factory = localbp_no_speculation_factory
-    case "gshare":
+    case "Gshare":
         from sys_config_factory.factories import gshare_factory
         bp_factory = gshare_factory
+    case "LongGshare":
+        from sys_config_factory.factories import long_gshare_factory
+        bp_factory = long_gshare_factory
 
 match (args.config):
     case "MediumSonicBOOM":

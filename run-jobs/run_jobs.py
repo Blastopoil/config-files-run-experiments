@@ -95,7 +95,7 @@ def main():
     bp_choices = ["TAGE_SC_L", "TAGE_SC", "TAGE_L", "LTAGE", "LocalBP", "BiModeBP", 
                   "AlwaysFalseBP", "AlwaysTrueBP", "RandomBP", 
                   "TAGE_SC_L_8", "TAGE_SC_8", "TAGE_L_8",
-                  "gshare", "gshare_mod"]
+                  "LongGshare", "Gshare", "GshareMod"]
     parser.add_argument(
         "--bp",
         help=f"bp to use of the following: {list(bp_choices)}, if not specified, runs all bps",
