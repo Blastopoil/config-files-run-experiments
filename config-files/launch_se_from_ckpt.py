@@ -71,7 +71,9 @@ bp_choices = ["TAGE_SC_L", "TAGE_SC", "TAGE_L", "LTAGE", "LocalBP", "BiModeBP",
               "AlwaysFalseBP", "AlwaysTrueBP", "RandomBP", 
               "TAGE_SC_L_8", "TAGE_SC_8", "TAGE_L_8",
               "TAGE_SC_L_no_specul", "LocalBP_no_specul",
-              "LongGshare", "Gshare", "GshareMod", "LongGshareMod", "PartitionedGshareMod", "LongPartitionedGshareMod"]
+              "LongGshare", "Gshare", 
+              "GshareMod", "LongGshareMod", "PartitionedGshareMod", "LongPartitionedGshareMod",
+              "GshareInclusive", "LongGshareInclusive", "PartitionedGshareInclusive", "LongPartitionedGshareInclusive"]
 parser.add_argument(
     "--bp",
     choices=bp_choices,
@@ -190,6 +192,18 @@ match (args.bp):
     case "LongPartitionedGshareMod":
         from sys_config_factory.factories import long_partitioned_gshare_mod_factory
         bp_factory = long_partitioned_gshare_mod_factory
+    case "GshareInclusive":
+        from sys_config_factory.factories import gshare_inclusive_factory
+        bp_factory = gshare_inclusive_factory
+    case "LongGshareInclusive":
+        from sys_config_factory.factories import long_gshare_inclusive_factory
+        bp_factory = long_gshare_inclusive_factory
+    case "PartitionedGshareInclusive":
+        from sys_config_factory.factories import partitioned_gshare_inclusive_factory
+        bp_factory = partitioned_gshare_inclusive_factory
+    case "LongPartitionedGshareInclusive":
+        from sys_config_factory.factories import long_partitioned_gshare_inclusive_factory
+        bp_factory = long_partitioned_gshare_inclusive_factory
 
 match (args.config):
     case "MediumSonicBOOM":

@@ -553,3 +553,46 @@ def long_partitioned_gshare_mod_factory():
     branchPred.requiresBTBHit = True
     branchPred.takenOnlyHistory = True
     return branchPred
+
+def gshare_inclusive_factory():
+    from components.branchPredictorComponents import customBranchPredictor
+    from m5.objects import GshareReplicatedInclusiveBP
+    branchPred = customBranchPredictor(
+        conditional_predictor=GshareReplicatedInclusiveBP()
+    )
+    branchPred.requiresBTBHit = True
+    branchPred.takenOnlyHistory = True
+    return branchPred
+
+def long_gshare_inclusive_factory():
+    from components.branchPredictorComponents import customBranchPredictor
+    from m5.objects import GshareReplicatedInclusiveBP
+    branchPred = customBranchPredictor(
+        conditional_predictor=GshareReplicatedInclusiveBP()
+    )
+    branchPred.conditionalBranchPred.global_predictor_size = 4096 # 4096 bits de registro global en vez de 512
+    branchPred.requiresBTBHit = True
+    branchPred.takenOnlyHistory = True
+    return branchPred
+
+def partitioned_gshare_inclusive_factory():
+    from components.branchPredictorComponents import customBranchPredictor
+    from m5.objects import GshareReplicatedInclusiveBP
+    branchPred = customBranchPredictor(
+        conditional_predictor=GshareReplicatedInclusiveBP()
+    )
+    branchPred.conditionalBranchPred.global_predictor_size = 256
+    branchPred.requiresBTBHit = True
+    branchPred.takenOnlyHistory = True
+    return branchPred
+
+def long_partitioned_gshare_inclusive_factory():
+    from components.branchPredictorComponents import customBranchPredictor
+    from m5.objects import GshareReplicatedInclusiveBP
+    branchPred = customBranchPredictor(
+        conditional_predictor=GshareReplicatedInclusiveBP()
+    )
+    branchPred.conditionalBranchPred.global_predictor_size = 2048 # 4096 bits de registro global en vez de 512
+    branchPred.requiresBTBHit = True
+    branchPred.takenOnlyHistory = True
+    return branchPred
