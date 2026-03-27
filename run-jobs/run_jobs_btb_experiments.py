@@ -212,10 +212,10 @@ def main():
                         job_id = submit_job(sbatch_script)
                         
                         if job_id:
-                            submitted_jobs.append((btb_dir_suffix, ras_dir_suffix, width_dir_suffix, bp, benchmark, app, job_id))
-                            print(f"Submitted job {job_id} for {btb_dir_suffix}/{ras_dir_suffix}/{width_dir_suffix}/{bp}/{benchmark}/{app}")
+                            submitted_jobs.append((btb_dir_suffix, ras_dir_suffix, bp, benchmark, app, job_id))
+                            print(f"Submitted job {job_id} for {btb_dir_suffix}/{ras_dir_suffix}/{bp}/{benchmark}/{app}")
                         else:
-                            print(f"Failed to submit job for {btb_dir_suffix}/{ras_dir_suffix}/{width_dir_suffix}/{bp}/{benchmark}/{app}")
+                            print(f"Failed to submit job for {btb_dir_suffix}/{ras_dir_suffix}/{bp}/{benchmark}/{app}")
                         
                         # Small delay to avoid overwhelming the scheduler
                         time.sleep(0.1)
@@ -257,10 +257,10 @@ def main():
                         job_id = submit_job(sbatch_script)
                         
                         if job_id:
-                            submitted_jobs.append((btb_dir_suffix, ras_dir_suffix, width_dir_suffix, bp, benchmark, app, job_id))
-                            print(f"Submitted job {job_id} for {btb_dir_suffix}/{ras_dir_suffix}/{width_dir_suffix}/{bp}/{benchmark}/{app}")
+                            submitted_jobs.append((btb_dir_suffix, ras_dir_suffix, bp, benchmark, app, job_id))
+                            print(f"Submitted job {job_id} for {btb_dir_suffix}/{ras_dir_suffix}/{bp}/{benchmark}/{app}")
                         else:
-                            print(f"Failed to submit job for {btb_dir_suffix}/{ras_dir_suffix}/{width_dir_suffix}/{bp}/{benchmark}/{app}")
+                            print(f"Failed to submit job for {btb_dir_suffix}/{ras_dir_suffix}/{bp}/{benchmark}/{app}")
                         
                         # Small delay to avoid overwhelming the scheduler
                         time.sleep(0.1)
@@ -269,8 +269,8 @@ def main():
     print(f"Summary: Submitted {len(submitted_jobs)} jobs")
     print(f"{'='*60}")
     
-    for btb_dir_suffix, ras_dir_suffix, width_dir_suffix, bp, benchmark, app, job_id in submitted_jobs:
-        print(f"Job {job_id}: {btb_dir_suffix}/{ras_dir_suffix}/{width_dir_suffix}/{bp}/{benchmark}/{app}")
+    for btb_dir_suffix, ras_dir_suffix, bp, benchmark, app, job_id in submitted_jobs:
+        print(f"Job {job_id}: {btb_dir_suffix}/{ras_dir_suffix}/{bp}/{benchmark}/{app}")
     
     print(f"\nMonitor jobs with: squeue -u $USER")
     print(f"Cancel all jobs with: scancel -u $USER")
