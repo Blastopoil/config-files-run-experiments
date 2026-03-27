@@ -38,7 +38,7 @@ option_list <- list(
               help="Attention! This argument is only used in 'separate' mode (not activated by default)\n\t\t'bp': groups bars by predictor\n\t\t'config': groups bars by core config\n\t\t'app': groups bars by app"),
 
   make_option(c("-v", "--various"), type="character", default="one",
-              help="'two'")
+              help="'two' for studying the experiemnt in which 2 apps executed in Full System")
             
 )
 

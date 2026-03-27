@@ -58,13 +58,13 @@ find "$DATA_SRC_DIR" -maxdepth 3 -mindepth 3 -type d | sort | while read app_dir
     stats_file="${app_dir}/stats.txt"
     config_file="${app_dir}/config.json"
 
-    # 2. Check if stats.txt and config.ini exist
+    # 2. Check if stats.txt and config.json exist
     if [ ! -f "$stats_file" ]; then
         echo "Warning: stats.txt not found for $app_name at $stats_file. Skipping."
         continue
     fi
     if [ ! -f "$config_file" ]; then
-        echo "Warning: config.ini not found for $app_name at $config_file. Skipping."
+        echo "Warning: config.json not found for $app_name at $config_file. Skipping."
         continue
     fi
         
