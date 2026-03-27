@@ -194,8 +194,8 @@ def main():
                             continue
 
                         # Create output directory: config/bp/benchmark/app/
-                        btb_dir_suffix = f"BTB{btb_size['numEntries']}"
-                        ras_dir_suffix = f"RAS{ras_size['numEntries']}"
+                        btb_dir_suffix = f"BTB{btb_size.get('numEntries')}"
+                        ras_dir_suffix = f"RAS{ras_size.get('numEntries')}"
                         output_dir = create_directory(
                             os.path.join(base_output_dir, btb_dir_suffix, ras_dir_suffix, bp, benchmark, app),
                             clean_if_exists=True
@@ -239,8 +239,8 @@ def main():
                             continue
 
                         # Create output directory: config/bp/benchmark/app/
-                        btb_dir_suffix = f"BTB{btb_size['numEntries']}"
-                        ras_dir_suffix = f"RAS{ras_size['numEntries']}"
+                        btb_dir_suffix = f"BTB{btb_size.get('numEntries')}"
+                        ras_dir_suffix = f"RAS{ras_size.get('numEntries')}"
                         output_dir = create_directory(
                             os.path.join(base_output_dir, btb_dir_suffix, ras_dir_suffix, bp, benchmark, app),
                             clean_if_exists=True
@@ -274,11 +274,13 @@ def main():
                         time.sleep(0.1)
     
     print(f"\n{'='*60}")
-    print(f"Summary: Submitted {len(submitted_jobs)} jobs")
-    print(f"{'='*60}")
     
     for btb_dir_suffix, ras_dir_suffix, bp, benchmark, app, job_id in submitted_jobs:
         print(f"Job {job_id}: {btb_dir_suffix}/{ras_dir_suffix}/{bp}/{benchmark}/{app}")
+    
+    print(f"{'='*60}")
+    print(f"Summary: Submitted {len(submitted_jobs)} jobs")
+    print(f"{'='*60}")
     
     print(f"\nMonitor jobs with: squeue -u $USER")
     print(f"Cancel all jobs with: scancel -u $USER")
