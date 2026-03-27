@@ -141,9 +141,21 @@ else:
     extra_params = None
 
 # Check that extra_params have been passed if and only if the config is BaseCPU (the only one currently supporting custom BTB and RAS sizes)
-if (args.btb_size or args.ras_size) and args.config != "BaseCPU":
-    print("ERROR: --btb_size and --ras_size can only be used with the BaseCPU config")
-    exit(1)
+if (args.btb_size or args.ras_size):
+    if args.config != "BaseCPU":
+        print("ERROR: --btb_size and --ras_size can only be used with the BaseCPU config")
+    try:
+        btb_size = eval(args.btb_size) if args.btb_size else None
+        ras_size = eval(args.ras_size) if args.ras_size else None
+        if btb_size and not isinstance(btb_size, dict):
+            print("ERROR: --btb_size must be a string representation of a dictionary")
+            exit(1)
+        if ras_size and not isinstance(ras_size, dict):
+            print("ERROR: --ras_size must be a string representation of a dictionary")
+            exit(1)
+    except Exception as e:
+        print(f"ERROR: Failed to parse --btb_size or --ras_size: {e}")
+        exit(1)
 
 if args.num_ticks and args.num_insts:
     print("ERROR: Cannot specify both --num_ticks and --num_insts at the same time")

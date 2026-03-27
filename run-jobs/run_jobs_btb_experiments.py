@@ -52,8 +52,8 @@ cd {spec_dir}/{app}
     --config {config} \
     --bp {bp} \
     --mem_size {mem_size} \
-    --btb_size {btb_param} \
-    --ras_size {ras_param} \
+    --btb_size "{btb_param}" \
+    --ras_size "{ras_param}" \
     --num_insts 550000000
 #   --num_ticks 100000000000 
 """
@@ -147,9 +147,17 @@ def main():
     ckpt_base_dirs = {
         "SPEC17": os.getenv("ckpt_path") + "/",
     }
+    
+    btb_sizes = ({"numEntries": 16384},
+                 {"numEntries": 8192},
+                 {"numEntries": 4096},
+                 {"numEntries": 2048},
+                 {"numEntries": 1024})
 
-    btb_sizes = (16384, 8192, 2048, 1024)
-    ras_sizes = (64, 32, 8, 4)
+    ras_sizes = ({"numEntries": 64},
+                 {"numEntries": 32},
+                 {"numEntries": 8},
+                 {"numEntries": 4})
 
     bps = ["TAGE_SC_L"]
     
@@ -186,8 +194,8 @@ def main():
                             continue
 
                         # Create output directory: config/bp/benchmark/app/
-                        btb_dir_suffix = f"BTB{btb_size}"
-                        ras_dir_suffix = f"RAS{ras_size}"
+                        btb_dir_suffix = f"BTB{btb_size['numEntries']}"
+                        ras_dir_suffix = f"RAS{ras_size['numEntries']}"
                         output_dir = create_directory(
                             os.path.join(base_output_dir, btb_dir_suffix, ras_dir_suffix, bp, benchmark, app),
                             clean_if_exists=True
@@ -231,8 +239,8 @@ def main():
                             continue
 
                         # Create output directory: config/bp/benchmark/app/
-                        btb_dir_suffix = f"BTB{btb_size}"
-                        ras_dir_suffix = f"RAS{ras_size}"
+                        btb_dir_suffix = f"BTB{btb_size['numEntries']}"
+                        ras_dir_suffix = f"RAS{ras_size['numEntries']}"
                         output_dir = create_directory(
                             os.path.join(base_output_dir, btb_dir_suffix, ras_dir_suffix, bp, benchmark, app),
                             clean_if_exists=True
@@ -249,8 +257,8 @@ def main():
                             output_dir,
                             mem_size,
                             slurm_mem_size,
-                            btb_size=btb_size,
-                            ras_size=ras_size,
+                            btb_size,
+                            ras_size,
                         )
                         
                         # Submit the job
