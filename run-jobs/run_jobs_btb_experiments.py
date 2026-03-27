@@ -41,7 +41,7 @@ def generate_sbatch_script(gem5_binary, config_script, spec_dir, app, config, bp
 #SBATCH --partition=ce_200
 #SBATCH --exclude=ce210
 #SBATCH --mem-per-cpu={slurm_mem_size}
-#SBATCH --job-name=delay_experiment_{app}_{config}
+#SBATCH --job-name=btb_experiment_{app}_{config}
 #SBATCH --output={output_dir}/slurm.out
 #SBATCH --error={output_dir}/slurm.err
 
@@ -52,8 +52,8 @@ cd {spec_dir}/{app}
     --config {config} \
     --bp {bp} \
     --mem_size {mem_size} \
-    --btb_size "{btb_param}" \
-    --ras_size "{ras_param}" \
+    --btb_params "{btb_param}" \
+    --ras_params "{ras_param}" \
     --num_insts 550000000
 #   --num_ticks 100000000000 
 """
@@ -154,8 +154,8 @@ def main():
                  {"numEntries": 2048},
                  {"numEntries": 1024})
 
-    ras_sizes = ({"numEntries": 64},
-                 {"numEntries": 32},
+    ras_sizes = ({"numEntries": 32},
+                 {"numEntries": 16},
                  {"numEntries": 8},
                  {"numEntries": 4})
 
@@ -183,7 +183,7 @@ def main():
         print(f"Applications: {', '.join(apps)}")
         print(f"{'='*60}")
 
-        ras_size = 16 # Predeterminanda de gem5
+        ras_size = {"numEntries": 64} # Predeterminanda de gem5
         for btb_size in btb_sizes:
             for config in configs:
                 for bp in bps:
@@ -228,7 +228,7 @@ def main():
                         # Small delay to avoid overwhelming the scheduler
                         time.sleep(0.1)
 
-        btb_size = 4096 # Predeterminanda de gem5
+        btb_size = {"numEntries": 16384} # Predeterminanda de gem5
         for ras_size in ras_sizes:
             for config in configs:
                 for bp in bps:

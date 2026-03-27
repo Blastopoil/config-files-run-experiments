@@ -110,14 +110,16 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "--btb_size",
-    type=int,
+    "--btb_params",
+    type=str,
+    default=None,
     help="Size of the branch target buffer"
 )
 
 parser.add_argument(
-    "--ras_size",
-    type=int,
+    "--ras_params",
+    type=str,
+    default=None,
     help="Size of the return address stack"
 )
 
@@ -141,20 +143,20 @@ else:
     extra_params = None
 
 # Check that extra_params have been passed if and only if the config is BaseCPU (the only one currently supporting custom BTB and RAS sizes)
-if (args.btb_size or args.ras_size):
+if (args.btb_params or args.ras_params):
     if args.config != "BaseCPU":
-        print("ERROR: --btb_size and --ras_size can only be used with the BaseCPU config")
+        print("ERROR: --btb_params and --ras_params can only be used with the BaseCPU config")
     try:
-        btb_size = eval(args.btb_size) if args.btb_size else None
-        ras_size = eval(args.ras_size) if args.ras_size else None
-        if btb_size and not isinstance(btb_size, dict):
-            print("ERROR: --btb_size must be a string representation of a dictionary")
+        btb_params = eval(args.btb_params) if args.btb_params else None
+        ras_params = eval(args.ras_params) if args.ras_params else None
+        if btb_params and not isinstance(btb_params, dict):
+            print("ERROR: --btb_params must be a string representation of a dictionary")
             exit(1)
-        if ras_size and not isinstance(ras_size, dict):
-            print("ERROR: --ras_size must be a string representation of a dictionary")
+        if ras_params and not isinstance(ras_params, dict):
+            print("ERROR: --ras_params must be a string representation of a dictionary")
             exit(1)
     except Exception as e:
-        print(f"ERROR: Failed to parse --btb_size or --ras_size: {e}")
+        print(f"ERROR: Failed to parse --btb_params or --ras_params: {e}")
         exit(1)
 
 if args.num_ticks and args.num_insts:
@@ -247,8 +249,8 @@ match (args.config):
         sys_config = big_O3_factory(mem_size_str, bp_factory)
     case "BaseCPU":
         from sys_config_factory.factories import base_cpu_factory
-        if args.btb_size or args.ras_size:
-            sys_config = base_cpu_factory(mem_size_str, bp_factory, extra=extra_params, btb_size=args.btb_size, ras_size=args.ras_size)
+        if args.btb_params or args.btb_params:
+            sys_config = base_cpu_factory(mem_size_str, bp_factory, extra=extra_params, btb_size=btb_params, ras_size=ras_params)
         else:
             sys_config = base_cpu_factory(mem_size_str, bp_factory, extra=extra_params)
     case "CVA6":
