@@ -109,9 +109,22 @@ parser.add_argument(
     help="String representation of a dictionary with extra parameters to override in the processor configuration (e.g. '{\"fetchWidth\": 2}' to override fetchWidth to 2)",
 )
 
+parser.add_argument(
+    "--btb_size",
+    type=int,
+    help="Size of the branch target buffer"
+)
+
+parser.add_argument(
+    "--ras_size",
+    type=int,
+    help="Size of the return address stack"
+)
+
 args = parser.parse_args()
 mem_size_str = f"{args.mem_size}GiB"
 
+# Check that extra_params have been passed if and only if the config is BaseCPU or MinisculeO3 (the only ones currently supporting extra params)
 if args.extra_params:
     if args.config != "BaseCPU" and args.config != "MinisculeO3":
         print("At the moment, extra params are to be passed only to the the BaseCPU and MinisculeO3")
@@ -126,6 +139,11 @@ if args.extra_params:
         exit(1)
 else:
     extra_params = None
+
+# Check that extra_params have been passed if and only if the config is BaseCPU (the only one currently supporting custom BTB and RAS sizes)
+if (args.btb_size or args.ras_size) and args.config != "BaseCPU":
+    print("ERROR: --btb_size and --ras_size can only be used with the BaseCPU config")
+    exit(1)
 
 if args.num_ticks and args.num_insts:
     print("ERROR: Cannot specify both --num_ticks and --num_insts at the same time")
@@ -217,7 +235,10 @@ match (args.config):
         sys_config = big_O3_factory(mem_size_str, bp_factory)
     case "BaseCPU":
         from sys_config_factory.factories import base_cpu_factory
-        sys_config = base_cpu_factory(mem_size_str, bp_factory, extra=extra_params)
+        if args.btb_size or args.ras_size:
+            sys_config = base_cpu_factory(mem_size_str, bp_factory, extra=extra_params, btb_size=args.btb_size, ras_size=args.ras_size)
+        else:
+            sys_config = base_cpu_factory(mem_size_str, bp_factory, extra=extra_params)
     case "CVA6":
         from sys_config_factory.factories import cva6_factory
         sys_config = cva6_factory(mem_size_str, bp_factory)

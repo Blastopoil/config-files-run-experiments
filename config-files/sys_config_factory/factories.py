@@ -174,7 +174,7 @@ def big_O3_factory(memory_size, bp_factory):
         "frequency": "3GHz"
     }
 
-def base_cpu_factory(memory_size, bp_factory, extra=None):
+def base_cpu_factory(memory_size, bp_factory, extra=None, btb_size=None, ras_size=None):
     """
     Generates a system that uses the predetermined gem5 configuration,
     L1I/L1D = 64KB, L2 = 1MB and L3 = 16MB (the BigO3 cache hierarchy)
@@ -226,9 +226,16 @@ def base_cpu_factory(memory_size, bp_factory, extra=None):
 
     processor.cores[0].core.branchPred = bp_factory()
     from components.branchPredictorComponents import BTB, RAS
-    from data.big_O3_data import BIG_O3_BTB_CONFIG, BIG_O3_RAS_CONFIG
-    processor.cores[0].core.branchPred.btb = BTB(BIG_O3_BTB_CONFIG)
-    processor.cores[0].core.branchPred.ras = RAS(BIG_O3_RAS_CONFIG)
+    if btb_size:
+        processor.cores[0].core.branchPred.btb = BTB(btb_size)
+    else:
+        from data.big_O3_data import BIG_O3_BTB_CONFIG
+        processor.cores[0].core.branchPred.btb = BTB(BIG_O3_BTB_CONFIG)
+    if ras_size:
+        processor.cores[0].core.branchPred.ras = RAS(ras_size)
+    else:
+        from data.big_O3_data import BIG_O3_RAS_CONFIG
+        processor.cores[0].core.branchPred.ras = RAS(BIG_O3_RAS_CONFIG)
 
     if IQ_config:
         match(IQ_config):
