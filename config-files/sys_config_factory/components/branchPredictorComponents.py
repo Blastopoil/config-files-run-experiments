@@ -5,11 +5,12 @@ from m5.objects import (
     )
 
 class customBranchPredictor(BranchPredictor):
-    def __init__(self, btb=None, ras=None, conditional_predictor=None):
+    def __init__(self, btb=None, ras=None, conditional_predictor=None, instShiftAmt=None):
         super(customBranchPredictor, self).__init__()
         if btb: self.btb = btb
         if ras: self.ras = ras
         if conditional_predictor: self.conditionalBranchPred = conditional_predictor
+        if instShiftAmt: self.instShiftAmt = instShiftAmt
 
 class BTB(SimpleBTB):
     def __init__(self, btb_config):
