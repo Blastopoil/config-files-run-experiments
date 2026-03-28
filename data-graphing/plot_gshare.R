@@ -246,6 +246,13 @@ geom_bar(stat="identity", position=position_dodge(width=0.8),
           # Un poco de transparencia para suavizar el tono)
           #alpha = 0.85
         ) +
+geom_text(
+      aes(label = sprintf("%.2f", mean)),
+      position = position_dodge(width = 0.8),
+      vjust = -0.25,
+      size = 3,
+      show.legend = FALSE
+      ) +
 labs(title=my_title, subtitle=my_subtitle, y=opt$metric, x="Application", fill="Branch Predictor") +
 theme_bw() + 
 theme(text = element_text(family = "sans", size = 18),

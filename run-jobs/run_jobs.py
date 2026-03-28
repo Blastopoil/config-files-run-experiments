@@ -177,8 +177,7 @@ def main():
     }
     
     # Base directory for output
-    base_output_dir = os.getenv("repo_path") + "/1-output-jobs_max_insts"
-    #base_output_dir = os.getenv("repo_path") + "/1-output-jobs"
+    base_output_dir = os.getenv("repo_path") + "/1-output-jobs"
     create_directory(base_output_dir)
     
     submitted_jobs = []
