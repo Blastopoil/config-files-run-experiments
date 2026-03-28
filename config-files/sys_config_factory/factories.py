@@ -489,6 +489,26 @@ def tage_l_8_factory():
     branchPred.takenOnlyHistory = True
     return branchPred
 
+def tage_sc_l_16_factory():
+    from components.branchPredictorComponents import customBranchPredictor, TAGE_SC_L_16KB
+    branchPred = customBranchPredictor(
+        instShiftAmt = 0, # After experimenting with gshare, having this to 1 actually hurts performance even though using RISCV,
+        conditional_predictor=TAGE_SC_L_16KB()
+    )
+    branchPred.requiresBTBHit = True
+    branchPred.takenOnlyHistory = True
+    return branchPred
+
+def tage_sc_l_32_factory():
+    from components.branchPredictorComponents import customBranchPredictor, TAGE_SC_L_32KB
+    branchPred = customBranchPredictor(
+        instShiftAmt = 0, # After experimenting with gshare, having this to 1 actually hurts performance even though using RISCV,
+        conditional_predictor=TAGE_SC_L_32KB()
+    )
+    branchPred.requiresBTBHit = True
+    branchPred.takenOnlyHistory = True
+    return branchPred
+
 def tage_sc_l_no_speculation_factory():
     from components.branchPredictorComponents import customBranchPredictor, TAGE_SC_L_64K_no_speculation
     branchPred = customBranchPredictor(
