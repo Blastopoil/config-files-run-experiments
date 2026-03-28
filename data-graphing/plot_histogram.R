@@ -454,6 +454,25 @@ if (opt$mode == "mean" && (length(apps_to_filter) > 1 || is.null(opt$apps))) {
     my_title = glue("Relation between {opt$metric} and configurations using these SPEC17 apps:")
     my_subtitle = glue("{apps_studied}")
   }
+  
+  # To adjust the text to the size of the image
+  is_all <- length(apps_to_filter) > 15
+  is_wide_plot <- length(apps_to_filter) > 12
+  is_svg <- grepl("\\.svg$", opt$output, ignore.case = TRUE)
+
+  if (is_all) {
+    base_text_size <- 13
+    title_size <- 18
+    subtitle_size <- 16
+    bar_label_size <- 3
+  } else {
+    base_text_size <- ifelse(is_wide_plot, 25, 18)
+    title_size <- ifelse(is_wide_plot, 25, 18)
+    subtitle_size <- ifelse(is_wide_plot, 22, 16)
+    bar_label_size <- ifelse(is_wide_plot, 4.2, 3)
+  }
+
+  my_linewidth <- ifelse(is_svg, 0.5, 0.3)
 
   # 6. Creación del gráfico
   ggplot(my_sum, aes(x=App, y=mean, fill=fill_label)) +
@@ -463,21 +482,28 @@ if (opt$mode == "mean" && (length(apps_to_filter) > 1 || is.null(opt$apps))) {
            # Contorno negro para definir la barra
            color = "black",
            # Grosor del contorno
-           linewidth = 0.3,
+           linewidth = my_linewidth,
            # Un poco de transparencia para suavizar el tono)
            #alpha = 0.85
           ) +
+  geom_text(
+      aes(label = sprintf("%.2f", mean)),
+      position = position_dodge(width = 0.8),
+      vjust = -0.25,
+      size = bar_label_size,
+      show.legend = FALSE
+      ) +
   labs(title=my_title, subtitle=my_subtitle, y=opt$metric, x="Application", fill="Core + Branch Predictor") +
   theme_bw() + 
-  theme(text = element_text(family = "sans", size = 18),
+  theme(text = element_text(family = "sans", size = base_text_size),
         # Rejilla principal muy tenue
         panel.grid.major = element_line(color = "grey90"),
         # Elimina rejilla secundaria
         panel.grid.minor = element_blank(),
         
         # 1. Alineación a la izquierda y sin márgenes extra que empujen el texto
-        plot.title = element_text(size=18, face="bold", hjust=0, margin=margin(b=2)),
-        plot.subtitle = element_text(size=16, face="bold", hjust=0, margin=margin(b=0)),
+        plot.title = element_text(size=title_size, face="bold", hjust=0, margin=margin(b=2)),
+        plot.subtitle = element_text(size=subtitle_size, face="bold", hjust=0, margin=margin(b=0)),
         
         # 2. Configuración de la leyenda
         legend.position = "top",
@@ -493,7 +519,7 @@ if (opt$mode == "mean" && (length(apps_to_filter) > 1 || is.null(opt$apps))) {
   get_scale(opt$mode)
 
   # Guardamos el gráfico con un ancho mayor para acomodar todas las apps cómodamente
-  if (opt$apps == "all" || length(apps_to_filter) > 12) {
+  if (opt$apps == "float") {
     ggsave(opt$output, width=25, height=6)
   } else {
     ggsave(opt$output, width=18, height=6)

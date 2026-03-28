@@ -148,8 +148,8 @@ if (!is.null(opt$apps)) {
 get_scale <- function() {
   if (opt$metric == "IPC") {
     scale <- scale_y_continuous(# Líneas principales cada 0.5 unidades
-                      limits = c(0, 4.5),
-                      breaks = seq(0, 4.5, by = 0.5), 
+                      limits = c(0, 2.5),
+                      breaks = seq(0, 4.5, by = 0.25), 
                       # Líneas finas cada 0.1 unidades para lectura precisa
                       minor_breaks = seq(0, 4, by = 0.1), 
                       # Hace que las barras toquen el eje X (mult = c(abajo, arriba))
@@ -168,7 +168,7 @@ get_scale <- function() {
     scale
   } else if (opt$metric == "CondMissRate") {
     scale <- scale_y_continuous(# Líneas principales cada 0.5 unidades
-                      #limits = c(0, 20),
+                      limits = c(0, 22.5),
                       breaks = seq(0, 70, by = 2.5), 
                       # Líneas finas cada 0.1 unidades para lectura precisa
                       minor_breaks = seq(0, 4, by = 0.1), 
@@ -234,15 +234,26 @@ if (is.null(opt$apps)) {
   my_subtitle = glue("SPEC float apps")
 }
 
+# To adjust the text to the size of the image
+is_wide_plot <- length(apps_to_filter) > 12
+is_svg <- grepl("\\.svg$", opt$output, ignore.case = TRUE)
+
+base_text_size <- ifelse(is_wide_plot, 25, 18)
+title_size <- ifelse(is_wide_plot, 25, 18)
+subtitle_size <- ifelse(is_wide_plot, 22, 16)
+bar_label_size <- ifelse(is_wide_plot, 4.2, 3)
+
+my_linewidth <- ifelse(is_svg, 0.5, 0.3)
+
 # 6. Creación del gráfico
 ggplot(my_sum, aes(x=App, y=mean, fill=fill_label)) +
-#scale_fill_paletteer_d("nationalparkcolors::Arches") +
+scale_fill_paletteer_d("nationalparkcolors::Arches") +
 geom_bar(stat="identity", position=position_dodge(width=0.8), 
           width=0.7, 
           # Contorno negro para definir la barra
           color = "black",
           # Grosor del contorno
-          linewidth = 0.3,
+          linewidth = my_linewidth,
           # Un poco de transparencia para suavizar el tono)
           #alpha = 0.85
         ) +
@@ -250,20 +261,20 @@ geom_text(
       aes(label = sprintf("%.2f", mean)),
       position = position_dodge(width = 0.8),
       vjust = -0.25,
-      size = 3,
+      size = bar_label_size,
       show.legend = FALSE
       ) +
 labs(title=my_title, subtitle=my_subtitle, y=opt$metric, x="Application", fill="Branch Predictor") +
 theme_bw() + 
-theme(text = element_text(family = "sans", size = 18),
+theme(text = element_text(family = "sans", size = base_text_size),
       # Rejilla principal muy tenue
       panel.grid.major = element_line(color = "grey90"),
       # Elimina rejilla secundaria
       panel.grid.minor = element_blank(),
       
       # 1. Alineación a la izquierda y sin márgenes extra que empujen el texto
-      plot.title = element_text(size=18, face="bold", hjust=0, margin=margin(b=0)),
-      plot.subtitle = element_text(size=16, face="bold", hjust=0, margin=margin(b=0)),
+      plot.title = element_text(size=title_size, face="bold", hjust=0, margin=margin(b=0)),
+      plot.subtitle = element_text(size=subtitle_size, face="bold", hjust=0, margin=margin(b=0)),
       
       # 2. Configuración de la leyenda
       legend.position = "top",
@@ -278,10 +289,28 @@ theme(text = element_text(family = "sans", size = 18),
       ) +
 get_scale()
 
-# Guardamos el gráfico con un ancho mayor para acomodar todas las apps cómodamente
-if (opt$apps == "all" || length(apps_to_filter) > 12) {
+# Guardamos el gráfico
+if (is_wide_plot) {
   ggsave(opt$output, width=25, height=6)
 } else {
   ggsave(opt$output, width=18, height=6)
 }
+
+# --- NUEVO: Inyectar el comando como metadato ---
+# 1. Capturamos los argumentos exactos que le pasaste al script
+args_pasados <- commandArgs(trailingOnly = TRUE)
+comando_ejecutado <- paste("Rscript data-graphing/plot_gshare.R", paste(args_pasados, collapse = " "))
+
+# 2. Usamos exiftool para incrustarlo en el PNG (en el campo Comment)
+# -q lo hace silencioso, -overwrite_original evita que cree una copia de backup
+comando_exif <- sprintf("exiftool -q -overwrite_original -Comment='%s' %s", comando_ejecutado, opt$output)
+
+# Ejecutamos el comando en la terminal desde R
+exit_code <- system(comando_exif)
+
+if (exit_code != 0) {
+  warning("No se pudo inyectar el metadato. ¿Tienes 'exiftool' instalado en tu sistema?")
+}
+
+# Abrimos la imagen
 system(paste("xdg-open", opt$output))
