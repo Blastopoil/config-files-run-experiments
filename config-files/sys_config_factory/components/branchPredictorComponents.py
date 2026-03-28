@@ -121,7 +121,7 @@ class TAGE_SC_L_TAGE_16KB(TAGE_SC_L_TAGE_8KB):
         ]
 
         self.minHist = 5
-        self.maxHist = 1500
+        self.maxHist = 1666
 
         self.logTagTableSize = 8
 
@@ -170,9 +170,9 @@ class TAGE_SC_L_TAGE_32KB(TAGE_SC_L_TAGE_64KB):
         ]
 
         self.minHist = 6
-        self.maxHist = 3000
+        self.maxHist = 2333
 
-        self.logTagTableSize = 12
+        self.logTagTableSize = 9
 
 class TAGE_SC_L_16KB(TAGE_SC_L_8KB):
     def __init__(self):
