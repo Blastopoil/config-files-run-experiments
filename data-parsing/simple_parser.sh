@@ -88,9 +88,9 @@ find "$DATA_SRC_DIR" -maxdepth 3 -mindepth 3 -type d | sort | while read app_dir
             disable_sc=$(jq -r '.board.processor.cores[0].core.branchPred.conditionalBranchPred.statistical_corrector.disable' "$config_file")
             if [ "$disable_loop_pred" == "false" ] && [ "$disable_sc" == "false" ]; then
                 sim_cond_bp="TAGE_SC_L_64"
-            elif [ "$disable_loop_pred" == "false" ]; then
+            elif [ "$disable_loop_pred" == "true" ] && [ "$disable_sc" == "false" ]; then
                 sim_cond_bp="TAGE_SC_64"
-            elif [ "$disable_sc" == "false" ]; then
+            elif [ "$disable_sc" == "true" ] && [ "$disable_loop_pred" == "false" ]; then
                 sim_cond_bp="TAGE_L_64"
             fi
         fi
@@ -103,9 +103,9 @@ find "$DATA_SRC_DIR" -maxdepth 3 -mindepth 3 -type d | sort | while read app_dir
             disable_sc=$(jq -r '.board.processor.cores[0].core.branchPred.conditionalBranchPred.statistical_corrector.disable' "$config_file")
             if [ "$disable_loop_pred" == "false" ] && [ "$disable_sc" == "false" ]; then
                 sim_cond_bp="TAGE_SC_L_8"
-            elif [ "$disable_loop_pred" == "false" ]; then
+            elif [ "$disable_loop_pred" == "true" ] && [ "$disable_sc" == "false" ]; then
                 sim_cond_bp="TAGE_SC_8"
-            elif [ "$disable_sc" == "false" ]; then
+            elif [ "$disable_sc" == "true" ] && [ "$disable_loop_pred" == "false" ]; then
                 sim_cond_bp="TAGE_L_8"
             fi
         fi
