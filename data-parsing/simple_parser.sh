@@ -102,11 +102,11 @@ find "$DATA_SRC_DIR" -maxdepth 3 -mindepth 3 -type d | sort | while read app_dir
             disable_loop_pred=$(jq -r '.board.processor.cores[0].core.branchPred.conditionalBranchPred.loop_predictor.disable' "$config_file")
             disable_sc=$(jq -r '.board.processor.cores[0].core.branchPred.conditionalBranchPred.statistical_corrector.disable' "$config_file")
             if [ "$disable_loop_pred" == "false" ] && [ "$disable_sc" == "false" ]; then
-                sim_cond_bp="TAGE_SC_L_8"
+                sim_cond_bp="TAGE_SC_L_08"
             elif [ "$disable_loop_pred" == "true" ] && [ "$disable_sc" == "false" ]; then
-                sim_cond_bp="TAGE_SC_8"
+                sim_cond_bp="TAGE_SC_08"
             elif [ "$disable_sc" == "true" ] && [ "$disable_loop_pred" == "false" ]; then
-                sim_cond_bp="TAGE_L_8"
+                sim_cond_bp="TAGE_L_08"
             fi
         fi
     fi

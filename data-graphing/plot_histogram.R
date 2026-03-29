@@ -195,7 +195,7 @@ get_scale <- function(mode) {
   } else if (opt$metric == "MPKI") {
     scale <- scale_y_continuous(# Líneas principales cada 0.5 unidades
                       limits = get_limit(opt$mode, c(0, 90)),
-                      breaks = get_breaks(opt$mode, seq(0, 180, by = 5)),
+                      #breaks = get_breaks(opt$mode, seq(0, 180, by = 1)),
                       # Líneas finas cada 0.1 unidades para lectura precisa
                       minor_breaks = seq(0, 4, by = 0.1), 
                       # Hace que las barras toquen el eje X (mult = c(abajo, arriba))
@@ -205,7 +205,7 @@ get_scale <- function(mode) {
   } else if (opt$metric == "CondMissRate") {
     scale <- scale_y_continuous(# Líneas principales cada 0.5 unidades
                       limits = get_limit(opt$mode, c(0, 20)),
-                      breaks = get_breaks(opt$mode, seq(0, 70, by = 2.5)), 
+                      #breaks = get_breaks(opt$mode, seq(0, 70, by = 2.5)), 
                       # Líneas finas cada 0.1 unidades para lectura precisa
                       minor_breaks = seq(0, 4, by = 0.1), 
                       # Hace que las barras toquen el eje X (mult = c(abajo, arriba))
@@ -444,15 +444,16 @@ if (opt$mode == "mean" && (length(apps_to_filter) > 1 || is.null(opt$apps))) {
   mutate(fill_label = paste(config, cond_bp, sep="\n"))
 
   # Títulos
-  my_title = glue("Relation between {opt$metric} and configurations per SPEC17 App plus their average")
-  my_subtitle = "Includes an overall 'Mean' of the selected applications"
+  my_title = glue("{opt$metric} in relation to the SPEC app and branch predictor. Config: {opt$config}")
+  my_subtitle = "Individual apps"
 
   # The title and subtitle for the plot
-  if (is.null(opt$apps)) {
-    my_title = glue("Relation between {opt$metric} and configurations per SPEC17 App plus their average")
-  } else {
-    my_title = glue("Relation between {opt$metric} and configurations using these SPEC17 apps:")
-    my_subtitle = glue("{apps_studied}")
+  if (is.null(opt$apps) || opt$apps == "all") {
+    my_subtitle = glue("All apps and average")
+  } else if (opt$apps == "int") {
+    my_subtitle = glue("SPEC int apps and average")
+  } else if (opt$apps == "float") {
+    my_subtitle = glue("SPEC float apps and average")
   }
   
   # To adjust the text to the size of the image
@@ -464,7 +465,7 @@ if (opt$mode == "mean" && (length(apps_to_filter) > 1 || is.null(opt$apps))) {
     base_text_size <- 13
     title_size <- 18
     subtitle_size <- 16
-    bar_label_size <- 3
+    bar_label_size <- 2.5
   } else {
     base_text_size <- ifelse(is_wide_plot, 25, 18)
     title_size <- ifelse(is_wide_plot, 25, 18)
@@ -524,6 +525,23 @@ if (opt$mode == "mean" && (length(apps_to_filter) > 1 || is.null(opt$apps))) {
   } else {
     ggsave(opt$output, width=18, height=6)
   }
+  # --- NUEVO: Inyectar el comando como metadato ---
+  # 1. Capturamos los argumentos exactos que le pasaste al script
+  args_pasados <- commandArgs(trailingOnly = TRUE)
+  comando_ejecutado <- paste("Rscript data-graphing/plot_gshare.R", paste(args_pasados, collapse = " "))
+
+  # 2. Usamos exiftool para incrustarlo en el PNG (en el campo Comment)
+  # -q lo hace silencioso, -overwrite_original evita que cree una copia de backup
+  comando_exif <- sprintf("exiftool -q -overwrite_original -Comment='%s' %s", comando_ejecutado, opt$output)
+
+  # Ejecutamos el comando en la terminal desde R
+  exit_code <- system(comando_exif)
+
+  if (exit_code != 0) {
+    warning("No se pudo inyectar el metadato. ¿Tienes 'exiftool' instalado en tu sistema?")
+  }
+
+  # Abrimos la imagen
   system(paste("xdg-open", opt$output))
 
 } else {

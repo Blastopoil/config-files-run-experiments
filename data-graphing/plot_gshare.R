@@ -226,7 +226,7 @@ my_title = glue("{opt$metric} ~ {my_sum$config} + bp")
 my_subtitle = "Individual apps"
 
 # The title and subtitle for the plot
-if (is.null(opt$apps)) {
+if (is.null(opt$apps) || opt$apps == "all") {
   my_subtitle = glue("All apps")
 } else if (opt$apps == "int") {
   my_subtitle = glue("SPEC int apps")
