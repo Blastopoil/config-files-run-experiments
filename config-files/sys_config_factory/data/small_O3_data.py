@@ -23,10 +23,10 @@ SMALL_O3_PROCESSOR_CONFIG = {
 SMALL_O3_IQ_ENTRIES = 72
 
 SMALL_O3_BTB_CONFIG = {
-    "numEntries": 1024,
+    "numEntries": 32768, # 1024
     "tagBits": 13
 }
 
 SMALL_O3_RAS_CONFIG = {
-    "numEntries": 16
+    "numEntries": 64 # 16
 }

@@ -23,10 +23,10 @@ BIG_O3_PROCESSOR_CONFIG = {
 BIG_O3_IQ_ENTRIES = 180
 
 BIG_O3_BTB_CONFIG = {
-    "numEntries": 2048,
+    "numEntries": 32768, # 2048
     "tagBits": 13
 }
 
 BIG_O3_RAS_CONFIG = {
-    "numEntries": 32
+    "numEntries": 64 # 32
 }
