@@ -35,7 +35,7 @@ def generate_sbatch_script(gem5_binary, config_script, spec_dir, app, config, bp
     spec_number = app[:3]
     sbatch_content = f"""#!/bin/bash
 #SBATCH --partition=ce
-#SBATCH --exclude=ce210,ce208
+#SBATCH --exclude=ce210
 #SBATCH --mem-per-cpu={slurm_mem_size}
 #SBATCH --job-name={app}_{config}
 #SBATCH --output={output_dir}/slurm.out
