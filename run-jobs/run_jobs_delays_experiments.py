@@ -90,7 +90,7 @@ def main():
         nargs='?', 
         help=f"SPEC17 app identification's tag: {list(spec_choices)}, if not specified, runs all SPES17 apps"
     )
-    bp_choices = ["TAGE_SC_L", "TAGE_SC", "TAGE_L", "LocalBP", "BiModeBP", "AlwaysFalseBP", "AlwaysTrueBP", "RandomBP"]
+    bp_choices = ["TAGE_SC_L", "TAGE_SC", "TAGE_L", "LocalBP", "BiModeBP", "AlwaysFalseBP", "AlwaysTrueBP", "RandomBP", "Gshare"]
     parser.add_argument(
         "--bp",
         help=f"bp to use of the following: {list(bp_choices)}, if not specified, runs all bps",
