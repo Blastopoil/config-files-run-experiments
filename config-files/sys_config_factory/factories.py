@@ -489,6 +489,16 @@ def tage_l_8_factory():
     branchPred.takenOnlyHistory = True
     return branchPred
 
+def tage_sc_l_8_mio_factory():
+    from components.branchPredictorComponents import customBranchPredictor, TAGE_SC_L_8KB_mio
+    branchPred = customBranchPredictor(
+        instShiftAmt = 0, # After experimenting with gshare, having this to 1 actually hurts performance even though using RISCV,
+        conditional_predictor=TAGE_SC_L_8KB_mio()
+    )
+    branchPred.requiresBTBHit = True
+    branchPred.takenOnlyHistory = True
+    return branchPred
+
 def tage_sc_l_16_factory():
     from components.branchPredictorComponents import customBranchPredictor, TAGE_SC_L_16KB
     branchPred = customBranchPredictor(
@@ -559,7 +569,7 @@ def gshare_mod_factory():
     from m5.objects import GshareReplicatedBP
     branchPred = customBranchPredictor(
         instShiftAmt = 0, # After experimenting with gshare, having this to 1 actually hurts performance even though using RISCV,
-        conditional_predictor=GshareReplicatedBP()
+        conditional_predictor=GshareReplicatedBP(instruction_shift = 2) #instruction_shift = 30 or at 0 correctly resulted in one of the two GHRs being used
     )
     branchPred.requiresBTBHit = True
     branchPred.takenOnlyHistory = True

@@ -79,7 +79,51 @@ class TAGE_SC_L_64K_no_speculation(TAGE_SC_L_64KB):
         self.statistical_corrector.speculativeHistUpdate = False
 
 
-class TAGE_SC_L_TAGE_16KB(TAGE_SC_L_TAGE_8KB):
+class TAGE_SC_L_TAGE_8KB_mio(TAGE_SC_L_TAGE_64KB):
+    def __init__(self):
+        super(TAGE_SC_L_TAGE_8KB_mio, self).__init__()
+        # 2 more tables that the 8KB TAGE
+        self.nHistoryTables = 30
+        self.noSkip = [
+            0,
+            0,
+            1,
+            0,
+            1,
+            0,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            0,
+            1,
+            0,
+            1,
+            0,
+            1,
+            0,
+            1,
+            0,
+            1
+        ]
+
+        self.minHist = 4 # TODO: Esto debería ir para abajo, no arriba
+        self.maxHist = 1000
+
+        self.logTagTableSize = 7
+
+class TAGE_SC_L_TAGE_16KB(TAGE_SC_L_TAGE_64KB):
     def __init__(self):
         super(TAGE_SC_L_TAGE_16KB, self).__init__()
         # 2 more tables that the 8KB TAGE
@@ -174,7 +218,15 @@ class TAGE_SC_L_TAGE_32KB(TAGE_SC_L_TAGE_64KB):
 
         self.logTagTableSize = 9
 
-class TAGE_SC_L_16KB(TAGE_SC_L_8KB):
+class TAGE_SC_L_8KB_mio(TAGE_SC_L_64KB):
+    def __init__(self):
+        super(TAGE_SC_L_16KB, self).__init__()
+        self.instShiftAmt = 0 # After experimenting with gshare, having this to 1 actually hurts performance even though using RISCV
+        self.speculativeHistUpdate = True
+        self.statistical_corrector.speculativeHistUpdate = True
+        self.tage = TAGE_SC_L_TAGE_8KB_mio()
+
+class TAGE_SC_L_16KB(TAGE_SC_L_64KB):
     def __init__(self):
         super(TAGE_SC_L_16KB, self).__init__()
         self.instShiftAmt = 0 # After experimenting with gshare, having this to 1 actually hurts performance even though using RISCV

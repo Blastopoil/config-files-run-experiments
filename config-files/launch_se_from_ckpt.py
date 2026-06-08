@@ -70,7 +70,7 @@ parser.add_argument(
 bp_choices = ["TAGE_SC_L", "TAGE_SC", "TAGE_L", "LTAGE", "LocalBP", "BiModeBP", 
               "AlwaysFalseBP", "AlwaysTrueBP", "RandomBP", 
               "TAGE_SC_L_8", "TAGE_SC_8", "TAGE_L_8",
-              "TAGE_SC_L_16", "TAGE_SC_L_32",
+              "TAGE_SC_L_8_mio", "TAGE_SC_L_16", "TAGE_SC_L_32",
               "TAGE_SC_L_no_specul", "LocalBP_no_specul",
               "LongGshare", "Gshare", 
               "GshareMod", "LongGshareMod", "PartitionedGshareMod", "LongPartitionedGshareMod",
@@ -201,6 +201,9 @@ match (args.bp):
     case "TAGE_L_8":
         from sys_config_factory.factories import tage_l_8_factory
         bp_factory = tage_l_8_factory
+    case "TAGE_SC_L_8_mio":
+        from sys_config_factory.factories import tage_sc_l_8_mio_factory
+        bp_factory = tage_sc_l_8_mio_factory
     case "TAGE_SC_L_16":
         from sys_config_factory.factories import tage_sc_l_16_factory
         bp_factory = tage_sc_l_16_factory
