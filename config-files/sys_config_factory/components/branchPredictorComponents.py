@@ -220,7 +220,7 @@ class TAGE_SC_L_TAGE_32KB(TAGE_SC_L_TAGE_64KB):
 
 class TAGE_SC_L_8KB_mio(TAGE_SC_L_64KB):
     def __init__(self):
-        super(TAGE_SC_L_16KB, self).__init__()
+        super(TAGE_SC_L_8KB_mio, self).__init__()
         self.instShiftAmt = 0 # After experimenting with gshare, having this to 1 actually hurts performance even though using RISCV
         self.speculativeHistUpdate = True
         self.statistical_corrector.speculativeHistUpdate = True
