@@ -564,12 +564,14 @@ def long_gshare_factory():
     branchPred.takenOnlyHistory = True
     return branchPred
 
+GSHARE_SHIFT = 2
+
 def gshare_mod_factory():
     from components.branchPredictorComponents import customBranchPredictor
     from m5.objects import GshareReplicatedBP
     branchPred = customBranchPredictor(
         instShiftAmt = 0, # After experimenting with gshare, having this to 1 actually hurts performance even though using RISCV,
-        conditional_predictor=GshareReplicatedBP(instruction_shift = 2) #instruction_shift = 30 or at 0 correctly resulted in one of the two GHRs being used
+        conditional_predictor=GshareReplicatedBP(instruction_shift = GSHARE_SHIFT) #instruction_shift = 30 or at 0 correctly resulted in one of the two GHRs being used
     )
     branchPred.requiresBTBHit = True
     branchPred.takenOnlyHistory = True
@@ -580,7 +582,7 @@ def long_gshare_mod_factory():
     from m5.objects import GshareReplicatedBP
     branchPred = customBranchPredictor(
         instShiftAmt = 0, # After experimenting with gshare, having this to 1 actually hurts performance even though using RISCV,
-        conditional_predictor=GshareReplicatedBP()
+        conditional_predictor=GshareReplicatedBP(instruction_shift = GSHARE_SHIFT)
     )
     branchPred.conditionalBranchPred.global_predictor_size = 4096
     branchPred.requiresBTBHit = True
@@ -592,7 +594,7 @@ def partitioned_gshare_mod_factory():
     from m5.objects import GshareReplicatedBP
     branchPred = customBranchPredictor(
         instShiftAmt = 0, # After experimenting with gshare, having this to 1 actually hurts performance even though using RISCV,
-        conditional_predictor=GshareReplicatedBP()
+        conditional_predictor=GshareReplicatedBP(instruction_shift = GSHARE_SHIFT)
     )
     branchPred.conditionalBranchPred.global_predictor_size = 256
     branchPred.requiresBTBHit = True
@@ -604,7 +606,7 @@ def long_partitioned_gshare_mod_factory():
     from m5.objects import GshareReplicatedBP
     branchPred = customBranchPredictor(
         instShiftAmt = 0, # After experimenting with gshare, having this to 1 actually hurts performance even though using RISCV,
-        conditional_predictor=GshareReplicatedBP()
+        conditional_predictor=GshareReplicatedBP(instruction_shift = GSHARE_SHIFT)
     )
     branchPred.conditionalBranchPred.global_predictor_size = 2048
     branchPred.requiresBTBHit = True
@@ -616,7 +618,7 @@ def gshare_inclusive_factory():
     from m5.objects import GshareReplicatedInclusiveBP
     branchPred = customBranchPredictor(
         instShiftAmt = 0, # After experimenting with gshare, having this to 1 actually hurts performance even though using RISCV,
-        conditional_predictor=GshareReplicatedInclusiveBP()
+        conditional_predictor=GshareReplicatedInclusiveBP(instruction_shift = GSHARE_SHIFT)
     )
     branchPred.requiresBTBHit = True
     branchPred.takenOnlyHistory = True
@@ -627,7 +629,7 @@ def long_gshare_inclusive_factory():
     from m5.objects import GshareReplicatedInclusiveBP
     branchPred = customBranchPredictor(
         instShiftAmt = 0, # After experimenting with gshare, having this to 1 actually hurts performance even though using RISCV,
-        conditional_predictor=GshareReplicatedInclusiveBP()
+        conditional_predictor=GshareReplicatedInclusiveBP(instruction_shift = GSHARE_SHIFT)
     )
     branchPred.conditionalBranchPred.global_predictor_size = 4096
     branchPred.requiresBTBHit = True
@@ -639,7 +641,7 @@ def partitioned_gshare_inclusive_factory():
     from m5.objects import GshareReplicatedInclusiveBP
     branchPred = customBranchPredictor(
         instShiftAmt = 0, # After experimenting with gshare, having this to 1 actually hurts performance even though using RISCV,
-        conditional_predictor=GshareReplicatedInclusiveBP()
+        conditional_predictor=GshareReplicatedInclusiveBP(instruction_shift = GSHARE_SHIFT)
     )
     branchPred.conditionalBranchPred.global_predictor_size = 256
     branchPred.requiresBTBHit = True
@@ -651,7 +653,7 @@ def long_partitioned_gshare_inclusive_factory():
     from m5.objects import GshareReplicatedInclusiveBP
     branchPred = customBranchPredictor(
         instShiftAmt = 0, # After experimenting with gshare, having this to 1 actually hurts performance even though using RISCV,
-        conditional_predictor=GshareReplicatedInclusiveBP()
+        conditional_predictor=GshareReplicatedInclusiveBP(instruction_shift = GSHARE_SHIFT)
     )
     branchPred.conditionalBranchPred.global_predictor_size = 2048
     branchPred.requiresBTBHit = True
