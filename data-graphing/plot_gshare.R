@@ -38,7 +38,7 @@ opt <- parse_args(OptionParser(option_list=option_list))
 # --- 2. Load Data ---
 files <- list.files(
     path = opt$input, 
-    pattern = "*_gshare_data.csv", 
+    pattern = "BigO3_gshare_data.csv", 
     full.names = TRUE
 )
 

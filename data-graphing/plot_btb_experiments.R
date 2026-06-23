@@ -28,15 +28,15 @@ option_list <- list(
   make_option(c("-a", "--apps"), type="character", default=NULL,
               help="Filters specific SPEC17 rate apps (none if not passed).\n\t\t'int' uses all SPEC17int apps\n\t\t'float' the SPEC17float apps\n\t\t'normal' a custom set of apps", metavar="LIST"),
   
-  make_option(c("-s", "--show_mean"), action="store_true", default=FALSE,
-              help="Muestra la media de todas las apps en lugar de las líneas individuales")
+  make_option(c("-r", "--representation"), type="character", default="btb",
+              help="\n\t\t'btb' shows change in relation to the btb size with constant ras size \n\t\t'ras' shows change in relation to the ras size with constant btb size", metavar="STR")
               
 )
 
 opt <- parse_args(OptionParser(option_list=option_list))
 
 # --- 2. Load Data ---
-file <- list.files(path = opt$input, pattern = "delay_experiments_data.csv", full.names = TRUE)
+file <- list.files(path = opt$input, pattern = "btb_experiments_data.csv", full.names = TRUE)
 if(length(file) == 0) stop("No .csv file was found")
 
 all_data <- data.frame()
@@ -93,14 +93,13 @@ all_data <- all_data %>%
   mutate(
     across(c(Sim_Is, total_cond_predicts, wrong_cond_predicts), ~ suppressWarnings(as.numeric(.x))),
     MPKI = ifelse(is.finite(wrong_cond_predicts / Sim_Is), 1000 * wrong_cond_predicts / Sim_Is, NA_real_),
-    CondMissRate = ifelse(is.finite(wrong_cond_predicts / total_cond_predicts), 100 * wrong_cond_predicts / total_cond_predicts, NA_real_)
+    CondMissRate = ifelse(is.finite(wrong_cond_predicts / total_cond_predicts), 100 * wrong_cond_predicts / total_cond_predicts, NA_real_),
+    AllMissRate = ifelse(is.finite(all_incorrect_preds / total_cond_predicts), 100 * all_incorrect_preds / total_cond_predicts, NA_real_)
   )
 
 if (!(opt$metric %in% colnames(all_data))) {
   stop(paste("Métrica no encontrada:", opt$metric))
 }
-
-print(all_data)
 
 # --- 4. Graph Creation ---
 
@@ -121,7 +120,7 @@ get_scale <- function() {
   if (opt$metric == "IPC") {
     scale <- scale_y_continuous(# Líneas principales cada 0.5 unidades
                       limits = c(0, 1),
-                      breaks = seq(0, 1, by = 0.1), 
+                      breaks = seq(0, 1, by = 0.2), 
                       # Líneas finas cada 0.1 unidades para lectura precisa
                       minor_breaks = seq(0, 1, by = 0.1), 
                       # Hace que las barras toquen el eje X (mult = c(abajo, arriba))
@@ -140,8 +139,8 @@ get_scale <- function() {
     scale
   } else if (opt$metric == "CondMissRate") {
     scale <- scale_y_continuous(# Líneas principales cada 0.5 unidades
-                      limits = c(0.5, 1.5),
-                      breaks = seq(0, 1.5, by = 0.1), 
+                      limits = c(0.9, 1.1),
+                      breaks = seq(0, 2, by = 0.1), 
                       # Líneas finas cada 0.1 unidades para lectura precisa
                       minor_breaks = seq(0, 4, by = 0.1), 
                       # Hace que las barras toquen el eje X (mult = c(abajo, arriba))
@@ -150,7 +149,6 @@ get_scale <- function() {
     scale
   }
 }
-
 get_average_function <- function() {
     if (opt$metric == "IPC") {
         function(x) {
@@ -160,110 +158,125 @@ get_average_function <- function() {
           exp(mean(log(x)))
         }
     } else if (opt$metric == "MPKI") {
-        # Añade na.rm = TRUE para ignorar los NA
-        function(x) mean(as.numeric(x), na.rm = TRUE) 
+        mean
     } else if (opt$metric == "CondMissRate") {
-        # Añade na.rm = TRUE para ignorar los NA
-        function(x) mean(as.numeric(x), na.rm = TRUE)
+        mean
     } else {
         stop(paste("Metric not found:", opt$metric))
     }
 }
 
+#colours <- colorRampPalette(ggthemes::tableau_color_pal("Tableau 20")(20))(30)
 colours <- as.character(paletteer::paletteer_d("pals::alphabet", n = 26))
+
+if (opt$representation == "btb") {
   
-# Label to filter by config and conditional branch predictor
-all_data <- all_data %>%
-  mutate(
-    delay_label = as.character(general_delay),
-    config_label = paste(cond_bp, sep = "\n")
-  )
+  # The title and subtitle for the plot
+  my_title = glue("{opt$metric} in relation to the BTB size. Config: BaseCPU + TAGE_SC_L")
+  if (is.null(opt$apps)) {
+    my_subtitle = glue("All apps")
+  } else if (opt$apps == "int") {
+    my_subtitle = glue("SPEC int apps")
+  } else if (opt$apps == "float") {
+    my_subtitle = glue("SPEC float apps")
+  }
 
-# Keep delay order numeric when possible
-delay_vals <- unique(all_data$delay_label)
-delay_num <- suppressWarnings(as.numeric(delay_vals))
-if (all(!is.na(delay_num))) {
-  delay_levels <- delay_vals[order(delay_num)]
-} else {
-  delay_levels <- sort(delay_vals)
-}
-
-if (opt$show_mean) {
   all_data <- all_data %>%
-    mutate(App = "Media")
+    mutate(
+      btb_size = suppressWarnings(as.numeric(btb_size)),
+      metric_value = suppressWarnings(as.numeric(.data[[opt$metric]]))
+    ) %>%
+    filter(is.finite(btb_size), is.finite(metric_value))
+
+  all_data <- all_data %>%
+    filter(ras_size %in% c(64))
+
+  print(all_data)
+
+  ggplot(
+    all_data,
+    aes(
+      x = btb_size,
+      y = metric_value,
+      color = App,
+      group = App,
+      shape = App
+    )
+    ) +
+    geom_line(size = 1) +
+    geom_point(size = 2.5) +
+    scale_x_continuous(
+      trans = "log2", 
+      breaks = c(512, 1024, 2048, 4096, 8192, 16384)
+    ) +
+    scale_color_manual(values = colours) +
+    scale_shape_manual(values = rep(1:25, length.out = 30)) +
+    labs(
+      title = my_title,
+      subtitle = my_subtitle,
+      x = "BTB size (logarithmic scale)",
+      y = opt$metric,
+      color = "SPEC app",
+      shape = "SPEC app"
+  ) +
+  theme_bw()
+
+} else if (opt$representation == "ras") {
+  
+  # The title and subtitle for the plot
+  my_title = glue("{opt$metric} in relation to the RAS size. Config: BaseCPU + TAGE_SC_L")
+  my_subtitle = "Individual apps"
+  if (is.null(opt$apps) || opt$apps == "all") {
+    my_subtitle = glue("All apps")
+  } else if (opt$apps == "int") {
+    my_subtitle = glue("SPEC int apps")
+  } else if (opt$apps == "float") {
+    my_subtitle = glue("SPEC float apps")
+  }
+
+  all_data <- all_data %>%
+    mutate(
+      ras_size = suppressWarnings(as.numeric(ras_size)),
+      metric_value = suppressWarnings(as.numeric(.data[[opt$metric]]))
+    ) %>%
+    filter(is.finite(ras_size), is.finite(metric_value))
+
+  print(all_data)
+  all_data <- all_data %>%
+    filter(btb_size %in% c(16384))
+
+  print(all_data)
+
+  ggplot(
+    all_data,
+    aes(
+      x = ras_size,
+      y = metric_value,
+      color = App,
+      group = App,
+      shape = App
+    )
+    ) +
+    geom_line(size = 1) +
+    geom_point(size = 2.5) +
+    scale_x_continuous(
+      trans = "log2", 
+      breaks = c(4, 8, 16, 32, 64)
+    ) +
+    scale_color_manual(values = colours) +
+    scale_shape_manual(values = rep(1:25, length.out = 30)) +
+    labs(
+      title = my_title,
+      subtitle = my_subtitle,
+      x = "RAS size (logarithmic scale)",
+      y = opt$metric,
+      color = "SPEC app",
+      shape = "SPEC app"
+  ) +
+  theme_bw()
+
 }
 
-all_data_lines <- all_data %>%
-  mutate(delay_order = match(delay_label, delay_levels)) %>%
-  group_by(App, cond_bp, delay_label, delay_order) %>%
-  summarise(
-    raw_value = get_average_function()(.data[[opt$metric]]),
-    .groups = "drop"
-  ) %>%
-  arrange(App, cond_bp, delay_order) %>%
-  group_by(App, cond_bp) %>%
-  mutate(value = raw_value / first(raw_value)) %>%
-  ungroup()
 
-# Check if more than two predictors were passed to make the correct title
-num_predictors <- if (!is.null(opt$predictors) && nzchar(opt$predictors)) {
-  length(trimws(strsplit(opt$predictors, ",")[[1]]))
-} else {
-  length(unique(all_data$cond_bp))
-}
-multiple_predictors <- num_predictors > 1
-if (multiple_predictors) {
-  my_title = glue("Relation between {opt$metric} and delay")
-} else {
-  my_title = glue("Relation between {opt$metric} and delay using {opt$predictors}")
-}
-
-# Generate the line plot with points
-ggplot(
-  all_data_lines,
-  aes(
-    x = factor(delay_label, levels = delay_levels),
-    y = value,
-    color = App,
-    shape = App,
-    linetype = cond_bp,                 # Asigna el tipo de línea al predictor
-    group = interaction(App, cond_bp)   # Dibuja una línea por cada par App-Predictor
-  )
-) +
-geom_line(linewidth = 1) +              # Soluciona el warning de "size" deprecado
-geom_point(size = 3) +
-scale_shape_manual(name = "App", values = rep(1:25, length.out = 30)) +
-scale_color_discrete(name = "App") +
-scale_linetype_discrete(name = "Predictor") + # Nueva leyenda para identificar los predictores
-scale_x_discrete(expand = expansion(mult = c(0.05, 0.05))) +
-labs(
-  title = my_title, 
-  y = opt$metric, 
-  x = "Delay"
-) +
-theme_bw() + 
-theme(
-  text = element_text(family = "sans", size = 18),
-  panel.grid.major = element_line(color = "grey90"),
-  panel.grid.minor = element_blank(),
-  plot.title = element_text(size = 18, face = "bold", margin = margin(b = 10), hjust = 0.5),
-  plot.subtitle = element_text(size = 16, face = "bold", hjust = 0.5),
-  axis.text.x = element_text(size = 14, angle = 45, hjust = 1),
-  axis.title.x = element_text(margin = margin(t = 10)),
-  # Puedes mantener el legend.position = "top" o cambiarlo a "right" si ves que ocupa mucho arriba
-  legend.position = "top",
-  legend.box = "vertical" # Apila la leyenda de Apps y la de Predictor si están arriba
-) +
-get_scale()
-
-# Save and shows the plot
-ggsave(opt$output, width=7, height=6)
+ggsave(opt$output, width=8, height=6)
 system(paste("xdg-open", opt$output))
-
-# Saves the command used to generate the plot using exiftool
-args <- commandArgs(trailingOnly = TRUE)
-comand <- paste("Rscript data-graphing/plot_bars_delay_experiments.R", paste(args, collapse = " "))
-
-comand_exif <- sprintf("exiftool -q -overwrite_original -Comment='%s' %s", comand, opt$output)
-
-exit_code <- system(comand_exif)

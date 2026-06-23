@@ -32,7 +32,10 @@ option_list <- list(
               help="Attention! This argument is only used in 'ggstatsplot' mode [default %default]", metavar="STR"),
   
   make_option(c("-g", "--grouping"), type="character", default="config",
-              help="How to group the data. 'config' groups by config, 'bp' groups by predictor[default %default]", metavar="STR")
+              help="How to group the data. 'config' groups by config, 'bp' groups by predictor[default %default]", metavar="STR"),
+  
+  make_option(c("-P", "--point"), type="logical", default=FALSE,
+              help="Whether to add points to the plot [default %default]", metavar="LOGICAL")
 )
 
 opt <- parse_args(OptionParser(option_list=option_list))
@@ -268,6 +271,18 @@ if (opt$Mode == "ggplot") {
     my_title = "Dispersion of the different SPEC apps"
     my_subtitle = NULL
 
+    # Wether it uses an average point
+    summary <- NULL
+    if (opt$point) {
+      summary <- stat_summary(fun = get_average_function(), 
+                              geom = "point", 
+                              shape = 21,
+                              size = 4,
+                              fill = "darkred",
+                              color = "white",
+                              stroke = 1)
+    }
+
     # The actual figure creation
     ggplot(all_data, aes(x=group_label, y=get_y(), fill=group_label)) +
     scale_fill_paletteer_d(get_palette()) +
@@ -275,13 +290,17 @@ if (opt$Mode == "ggplot") {
     geom_boxplot(width=0.15, alpha = 0.8, color="black", 
                 outlier.shape = NA) +
     geom_jitter(width=0.1, size=2, alpha=0.6, color="black") +
-    stat_summary(fun = get_average_function(), 
-                geom = "point", 
-                shape = 21,          # Forma 21 es un círculo con borde y relleno
-                size = 4,            # Tamaño grande para que destaque
-                fill = "darkred",    # Relleno rojo oscuro (como en ggstatsplot)
-                color = "white",     # Borde blanco para que resalte sobre el boxplot
-                stroke = 1) +        # Grosor del borde blanco
+    summary +
+    labs(title=my_title, subtitle=my_subtitle, y=opt$metric, x="Core configuration and Branch Predictor") +
+    theme_bw() + 
+    theme(text = element_text(family = "sans", size = 18),
+      # Rejilla principal muy tenue
+      panel.grid.major = element_line(color = "grey90"),
+      # Elimina rejilla secundaria
+      panel.grid.minor = element_blank(),
+      plot.title = element_text(size=18, face="bold", margin=margin(b=10), hjust=0.5),
+      plot.subtitle = element_text(size=16, face="bold", hjust=0.5),
+                stroke = 1) +
     labs(title=my_title, subtitle=my_subtitle, y=opt$metric, x="Core configuration and Branch Predictor") +
     theme_bw() + 
     theme(text = element_text(family = "sans", size = 18),
@@ -301,6 +320,22 @@ if (opt$Mode == "ggplot") {
 
     ggsave(opt$output, width=10, height=6)
     system(paste("xdg-open", opt$output))
+
+    # Inyectar el comando como metadato, se ve desde la terminal con: exiftool -Comment grafico.png
+    # 1. Capturamos los argumentos exactos que le pasaste al script
+    args_pasados <- commandArgs(trailingOnly = TRUE)
+    comando_ejecutado <- paste("Rscript data-graphing/plot_violin.R", paste(args_pasados, collapse = " "))
+
+    # 2. Usamos exiftool para incrustarlo en el PNG (en el campo Comment)
+    # -q lo hace silencioso, -overwrite_original evita que cree una copia de backup
+    comando_exif <- sprintf("exiftool -q -overwrite_original -Comment='%s' %s", comando_ejecutado, opt$output)
+
+    # Ejecutamos el comando en la terminal desde R
+    exit_code <- system(comando_exif)
+
+    if (exit_code != 0) {
+      warning("No se pudo inyectar el metadato. ¿Tienes 'exiftool' instalado en tu sistema?")
+    }
 
 } else {
     stop(paste("Mode not found:", opt$Mode))

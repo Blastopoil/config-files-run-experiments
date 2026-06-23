@@ -129,6 +129,7 @@ if (opt$various == "one") {
 # Adds columns
 
 all_data <- all_data %>%
+  mutate(MPKI_spec = (branch_mispredicts_at_execute / Sim_Is) * 1000) %>%
   mutate(MPKI = (wrong_cond_predicts / Sim_Is) * 1000) %>%
   mutate(CondMissRate = (wrong_cond_predicts / total_cond_predicts) * 100)
 
@@ -192,7 +193,7 @@ get_scale <- function(mode) {
                       expand = expansion(mult = c(0, 0.05)) 
                       )
     scale
-  } else if (opt$metric == "MPKI") {
+  } else if (opt$metric == "MPKI" || opt$metric == "MPKI_spec") {
     scale <- scale_y_continuous(# Líneas principales cada 0.5 unidades
                       limits = get_limit(opt$mode, c(0, 90)),
                       #breaks = get_breaks(opt$mode, seq(0, 180, by = 1)),
@@ -217,7 +218,7 @@ get_scale <- function(mode) {
 get_average_function <- function() {
     if (opt$metric == "IPC") {
         function(x) exp(mean(log(x)))
-    } else if (opt$metric == "MPKI") {
+    } else if (opt$metric == "MPKI" || opt$metric == "MPKI_spec") {
         mean
     } else if (opt$metric == "CondMissRate") {
         mean
@@ -444,16 +445,16 @@ if (opt$mode == "mean" && (length(apps_to_filter) > 1 || is.null(opt$apps))) {
   mutate(fill_label = paste(config, cond_bp, sep="\n"))
 
   # Títulos
-  my_title = glue("{opt$metric} in relation to the SPEC app and branch predictor. Config: {opt$config}")
+  my_title = glue("{opt$metric} in relation to the SPEC app and branch predictor.")
   my_subtitle = "Individual apps"
 
   # The title and subtitle for the plot
   if (is.null(opt$apps) || opt$apps == "all") {
     my_subtitle = glue("All apps and average")
   } else if (opt$apps == "int") {
-    my_subtitle = glue("SPEC int apps and average")
+    my_subtitle = glue("The following SPEC int apps and average:")
   } else if (opt$apps == "float") {
-    my_subtitle = glue("SPEC float apps and average")
+    my_subtitle = glue("The following SPEC float apps and average:")
   }
   
   # To adjust the text to the size of the image
@@ -498,22 +499,22 @@ if (opt$mode == "mean" && (length(apps_to_filter) > 1 || is.null(opt$apps))) {
   theme_bw() + 
   theme(text = element_text(family = "sans", size = base_text_size),
         # Rejilla principal muy tenue
-        panel.grid.major = element_line(color = "grey90"),
+        panel.grid.major = element_line(color = "grey70"),
         # Elimina rejilla secundaria
         panel.grid.minor = element_blank(),
         
         # 1. Alineación a la izquierda y sin márgenes extra que empujen el texto
-        plot.title = element_text(size=title_size, face="bold", hjust=0, margin=margin(b=2)),
-        plot.subtitle = element_text(size=subtitle_size, face="bold", hjust=0, margin=margin(b=0)),
+        plot.title = element_text(size=title_size, face="bold", hjust=0, margin=margin(b=5)),
+        plot.subtitle = element_text(size=subtitle_size, face="bold", hjust=0, margin=margin(b=40)),
         
         # 2. Configuración de la leyenda
         legend.position = "top",
         legend.justification = "right",
         legend.direction = "horizontal",
         
-        # 3. El truco: margen negativo superior para que la leyenda suba
-        # Ajusta el -40 según necesites (más negativo = más arriba)
-        legend.margin = margin(t = -30, b = 0),
+        # 3. Margen negativo superior para que la leyenda suba)
+        legend.box.margin = margin(t = -65, b = 0, r = 0, l = 0),
+        legend.margin = margin(t = 0, b = 0),
         
         axis.title.x = element_text(margin = margin(t = 10))
        ) +
@@ -521,14 +522,14 @@ if (opt$mode == "mean" && (length(apps_to_filter) > 1 || is.null(opt$apps))) {
 
   # Guardamos el gráfico con un ancho mayor para acomodar todas las apps cómodamente
   if (opt$apps == "float") {
-    ggsave(opt$output, width=25, height=6)
+    ggsave(opt$output, width=25, height=8)
   } else {
     ggsave(opt$output, width=18, height=6)
   }
   # --- NUEVO: Inyectar el comando como metadato ---
   # 1. Capturamos los argumentos exactos que le pasaste al script
   args_pasados <- commandArgs(trailingOnly = TRUE)
-  comando_ejecutado <- paste("Rscript data-graphing/plot_gshare.R", paste(args_pasados, collapse = " "))
+  comando_ejecutado <- paste("Rscript data-graphing/plot_histogram.R", paste(args_pasados, collapse = " "))
 
   # 2. Usamos exiftool para incrustarlo en el PNG (en el campo Comment)
   # -q lo hace silencioso, -overwrite_original evita que cree una copia de backup
@@ -543,6 +544,22 @@ if (opt$mode == "mean" && (length(apps_to_filter) > 1 || is.null(opt$apps))) {
 
   # Abrimos la imagen
   system(paste("xdg-open", opt$output))
+
+  # Inyectar el comando como metadato, se ve desde la terminal con: exiftool -Comment grafico.png
+  # 1. Capturamos los argumentos exactos que le pasaste al script
+  args_pasados <- commandArgs(trailingOnly = TRUE)
+  comando_ejecutado <- paste("Rscript data-graphing/plot_histogram.R", paste(args_pasados, collapse = " "))
+
+  # 2. Usamos exiftool para incrustarlo en el PNG (en el campo Comment)
+  # -q lo hace silencioso, -overwrite_original evita que cree una copia de backup
+  comando_exif <- sprintf("exiftool -q -overwrite_original -Comment='%s' %s", comando_ejecutado, opt$output)
+
+  # Ejecutamos el comando en la terminal desde R
+  exit_code <- system(comando_exif)
+
+  if (exit_code != 0) {
+    warning("No se pudo inyectar el metadato. ¿Tienes 'exiftool' instalado en tu sistema?")
+  }
 
 } else {
   print("Something went wrong with the mode and/or the app selection, no graphs generated")
