@@ -20,7 +20,7 @@ option_list <- list(
               help="Nombre base del archivo de salida. En modo batch se añade el sufijo _APPNUM [default %default]", metavar="FILE"),
   
   make_option(c("-m", "--metric"), type="character", default="IPC",
-              help="Métrica (IPC, MPKI, CondMissRate) [default %default]", metavar="STR"),
+              help="Métrica (IPC, MPKI, CondMissRate, CondBranches) [default %default]", metavar="STR"),
   
   make_option(c("-p", "--predictors"), type="character", default=NULL,
               help="Predictors (ex: 'TAGE_L,LocalBP') [default %default]", metavar="LIST"),
@@ -131,8 +131,10 @@ if (opt$various == "one") {
 all_data <- all_data %>%
   mutate(MPKI_spec = (branch_mispredicts_at_execute / Sim_Is) * 1000) %>%
   mutate(MPKI = (wrong_cond_predicts / Sim_Is) * 1000) %>%
-  mutate(CondMissRate = (wrong_cond_predicts / total_cond_predicts) * 100)
-
+  mutate(CondMissRate = (wrong_cond_predicts / total_cond_predicts) * 100) %>%
+  mutate(MissRate = (wrong_preds / total_preds) * 100) %>%
+  mutate(MissRate_spec = (branch_mispredicts_at_execute / branch_total_at_execute) * 100) %>%
+  mutate(CondBranches = total_cond_predicts)
 
 if (!(opt$metric %in% colnames(all_data))) {
   stop(paste("Métrica no encontrada:", opt$metric))
@@ -203,9 +205,9 @@ get_scale <- function(mode) {
                       expand = expansion(mult = c(0, 0.05)) 
                       )
     scale
-  } else if (opt$metric == "CondMissRate") {
+  } else if (opt$metric %in% c("CondMissRate", "CondBranches", "MissRate", "MissRate_spec")) {
     scale <- scale_y_continuous(# Líneas principales cada 0.5 unidades
-                      limits = get_limit(opt$mode, c(0, 20)),
+                      limits = c(0, 56),
                       #breaks = get_breaks(opt$mode, seq(0, 70, by = 2.5)), 
                       # Líneas finas cada 0.1 unidades para lectura precisa
                       minor_breaks = seq(0, 4, by = 0.1), 
@@ -213,6 +215,8 @@ get_scale <- function(mode) {
                       expand = expansion(mult = c(0, 0.05)) 
                       )
     scale
+  } else {
+    NULL
   }
 }
 get_average_function <- function() {
@@ -220,7 +224,7 @@ get_average_function <- function() {
         function(x) exp(mean(log(x)))
     } else if (opt$metric == "MPKI" || opt$metric == "MPKI_spec") {
         mean
-    } else if (opt$metric == "CondMissRate") {
+    } else if (opt$metric %in% c("CondMissRate", "CondBranches", "MissRate", "MissRate_spec")) {
         mean
     } else {
         stop(paste("Metric not found:", opt$metric))

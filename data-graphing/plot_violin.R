@@ -120,8 +120,12 @@ all_data <- rbind(all_data, og_data)
 # Adds columns
 
 all_data <- all_data %>%
+  mutate(MPKI_spec = (branch_mispredicts_at_execute / Sim_Is) * 1000) %>%
   mutate(MPKI = (wrong_cond_predicts / Sim_Is) * 1000) %>%
-  mutate(CondMissRate = (wrong_cond_predicts / total_cond_predicts) * 100)
+  mutate(CondMissRate = (wrong_cond_predicts / total_cond_predicts) * 100) %>%
+  mutate(MissRate = (wrong_preds / total_preds) * 100) %>%
+  mutate(MissRate_spec = (branch_mispredicts_at_execute / branch_total_at_execute) * 100) %>%
+  mutate(CondBranches = total_cond_predicts)
 
 if (!(opt$metric %in% colnames(all_data))) {
   stop(paste("Metric not found:", opt$metric))
@@ -167,7 +171,7 @@ get_scale <- function() {
                       expand = expansion(mult = c(0, 0.05)) 
                       )
     scale
-  } else if (opt$metric == "CondMissRate") {
+  } else if (opt$metric %in% c("CondMissRate", "CondBranches", "MissRate", "MissRate_spec")) {
     scale <- scale_y_continuous(# Líneas principales cada 0.5 unidades
                       limits = c(0, 35),
                       breaks = seq(0, 70, by = 5), 
@@ -184,8 +188,10 @@ get_y <- function() {
         all_data$IPC
     } else if (opt$metric == "MPKI") {
         all_data$MPKI
-    } else if (opt$metric == "CondMissRate") {
-        all_data$CondMissRate
+    } else if (opt$metric == "MPKI_spec") {
+        all_data$MPKI_spec
+    } else if (opt$metric %in% c("CondMissRate", "CondBranches", "MissRate", "MissRate_spec")) {
+        all_data[[opt$metric]]
     } else {
         stop(paste("Metric not found:", opt$metric))
     }
@@ -200,7 +206,9 @@ get_average_function <- function() {
         function(x) exp(mean(log(x)))
     } else if (opt$metric == "MPKI") {
         mean
-    } else if (opt$metric == "CondMissRate") {
+    } else if (opt$metric == "MPKI_spec") {
+        mean
+    } else if (opt$metric %in% c("CondMissRate", "CondBranches", "MissRate", "MissRate_spec")) {
         mean
     } else {
         stop(paste("Metric not found:", opt$metric))

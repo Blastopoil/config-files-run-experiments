@@ -41,7 +41,7 @@ if [ ! -d "$OUTPUT_DEST_DIR" ]; then
 fi
 
 # --- Initialize Output File ---
-echo "cond_bp,App,IPC,Sim_Is,total_cond_predicts,wrong_cond_predicts,wrong_preds,branch_mispredicts_at_execute" > "$OUTPUT_FILE"
+echo "cond_bp,App,IPC,Sim_Is,total_cond_predicts,total_preds,wrong_cond_predicts,wrong_preds,branch_mispredicts_at_execute,branch_total_at_execute" > "$OUTPUT_FILE"
 
 echo "------------------------------------------------"
 echo "Reading from:     $DATA_SRC_DIR"
@@ -125,27 +125,35 @@ find "$DATA_SRC_DIR" -maxdepth 3 -mindepth 3 -type d | sort | while read app_dir
     # Extract total conditional branch predictions
     sim_total_cond_preds=$(grep "branchPred.committed_0::DirectCond" "$stats_file" | tail -n 1 | awk '{print $2}')
 
+    # Extract total branch predictions
+    sim_total_preds=$(grep "branchPred.committed_0::total" "$stats_file" | tail -n 1 | awk '{print $2}')
+
     # Extract conditional branch mispredictions due to the conditional predictor
     sim_incorrect_cond_preds=$(grep "myMispredictDueToCondMiss_0::DirectCond" "$stats_file" | tail -n 1 | awk '{print $2}')
 
-    # Extract conditional branch mispredictions due to the conditional predictor
-    sim_incorrect_preds=$(grep "mispredictDueToPredictor_0::DirectCond" "$stats_file" | tail -n 1 | awk '{print $2}')
+    # Extract branch mispredictions
+    sim_incorrect_preds=$(grep "mispredicted_0::total" "$stats_file" | tail -n 1 | awk '{print $2}')
 
     # Extract branch mispredictions at execute
     sim_branch_exec_mispredicts=$(grep "board.processor.cores.core.iew.branchMispredicts" "$stats_file" | tail -n 1 | awk '{print $2}')
 
+    # Extract total branches at execute
+    sim_branch_exec_total=$(grep "executeStats0.numBranches" "$stats_file" | tail -n 1 | awk '{print $2}')
+    
     # Handle missing values
     sim_ipc=${sim_ipc:-N/A}
     sim_Is=${sim_Is:-N/A}
     sim_total_cond_preds=${sim_total_cond_preds:-N/A}
+    sim_total_preds=${sim_total_preds:-N/A}
     sim_incorrect_cond_preds=${sim_incorrect_cond_preds:-N/A}
     sim_incorrect_preds=${sim_incorrect_preds:-N/A}
     sim_branch_exec_mispredicts=${sim_branch_exec_mispredicts:-N/A}
+    sim_branch_exec_total=${sim_branch_exec_total:-N/A}
     sim_cond_bp=${sim_cond_bp:-N/A}
 
 
     # 4. Save to CSV
-    echo "$sim_cond_bp,$app_name,$sim_ipc,$sim_Is,$sim_total_cond_preds,$sim_incorrect_cond_preds,$sim_incorrect_preds,$sim_branch_exec_mispredicts" >> "$OUTPUT_FILE"
+    echo "$sim_cond_bp,$app_name,$sim_ipc,$sim_Is,$sim_total_cond_preds,$sim_total_preds,$sim_incorrect_cond_preds,$sim_incorrect_preds,$sim_branch_exec_mispredicts,$sim_branch_exec_total" >> "$OUTPUT_FILE"
     echo "Processed App: $app_name"
 
 done
