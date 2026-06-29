@@ -33,7 +33,7 @@ if [ ! -d "$OUTPUT_DEST_DIR" ]; then
 fi
 
 # --- Initialize Output File ---
-echo "cond_bp,App,IPC,Sim_Is,total_cond_predicts,wrong_cond_predicts,all_incorrect_preds,btb_size,ras_size,direct_calls,direct_cond,direct_uncond" > "$OUTPUT_FILE"
+echo "cond_bp,App,IPC,Sim_Is,total_cond_predicts,wrong_cond_predicts,all_incorrect_preds,btb_size,ras_size,direct_calls,direct_cond,direct_uncond,total_preds,wrong_preds,branch_mispredicts_at_execute,branch_total_at_execute" > "$OUTPUT_FILE"
 
 echo "------------------------------------------------"
 echo "Reading from:     $DATA_SRC_DIR"
@@ -95,10 +95,9 @@ find "$DATA_SRC_DIR" -maxdepth 5 -mindepth 5 -type d | sort | while read app_dir
     # Extract number of instructions
     sim_Is=$(grep "simInsts" "$stats_file" | tail -n 1 | awk '{print $2}')    
     # Extract total conditional branch predictions
-    #sim_total_cond_preds=$(grep "board.processor.cores.core.branchPred.condPredicted" "$stats_file" | tail -n 1 | awk '{print $2}')
     sim_total_cond_preds=$(grep "branchPred.committed_0::DirectCond" "$stats_file" | tail -n 1 | awk '{print $2}')
     # Extract conditional branch mispredictions due to the conditional predictor
-    sim_incorrect_cond_preds=$(grep "mispredictDueToPredictor_0::DirectCond" "$stats_file" | tail -n 1 | awk '{print $2}')
+    sim_incorrect_cond_preds=$(grep "myMispredictDueToCondMiss_0::DirectCond" "$stats_file" | tail -n 1 | awk '{print $2}')
     # Extract total mispredictions due to both BTB and conditional predictor
     sim_all_incorrect_preds=$(grep "branchPred.condIncorrect" "$stats_file" | tail -n 1 | awk '{print $2}')
     
@@ -107,6 +106,18 @@ find "$DATA_SRC_DIR" -maxdepth 5 -mindepth 5 -type d | sort | while read app_dir
     sim_direct_cond=$(grep "branchPred.btb.lookups::DirectCond" "$stats_file" | tail -n 1 | awk '{print $2}')
     
     sim_direct_uncond=$(grep "branchPred.btb.lookups::DirectUncond" "$stats_file" | tail -n 1 | awk '{print $2}')
+
+    # Extract total branch predictions
+    sim_total_preds=$(grep "branchPred.committed_0::total" "$stats_file" | tail -n 1 | awk '{print $2}')
+
+    # Extract branch mispredictions
+    sim_incorrect_preds=$(grep "mispredicted_0::total" "$stats_file" | tail -n 1 | awk '{print $2}')
+
+    # Extract branch mispredictions at execute
+    sim_branch_exec_mispredicts=$(grep "board.processor.cores.core.iew.branchMispredicts" "$stats_file" | tail -n 1 | awk '{print $2}')
+
+    # Extract total branches at execute
+    sim_branch_exec_total=$(grep "executeStats0.numBranches" "$stats_file" | tail -n 1 | awk '{print $2}')
 
     # Handle missing values
     sim_ipc=${sim_ipc:-N/A}
@@ -120,10 +131,14 @@ find "$DATA_SRC_DIR" -maxdepth 5 -mindepth 5 -type d | sort | while read app_dir
     sim_direct_calls=${sim_direct_calls:-N/A}
     sim_direct_cond=${sim_direct_cond:-N/A}
     sim_direct_uncond=${sim_direct_uncond:-N/A}
+    sim_total_preds=${sim_total_preds:-N/A}
+    sim_incorrect_preds=${sim_incorrect_preds:-N/A}
+    sim_branch_exec_mispredicts=${sim_branch_exec_mispredicts:-N/A}
+    sim_branch_exec_total=${sim_branch_exec_total:-N/A}
 
 
     # 4. Append to Output CSV
-    echo "${sim_cond_bp},${app_name},${sim_ipc},${sim_Is},${sim_total_cond_preds},${sim_incorrect_cond_preds},${sim_all_incorrect_preds},${sim_btb_size},${sim_ras_size},${sim_direct_calls},${sim_direct_cond},${sim_direct_uncond}" >> "$OUTPUT_FILE"
+    echo "${sim_cond_bp},${app_name},${sim_ipc},${sim_Is},${sim_total_cond_preds},${sim_incorrect_cond_preds},${sim_all_incorrect_preds},${sim_btb_size},${sim_ras_size},${sim_direct_calls},${sim_direct_cond},${sim_direct_uncond},${sim_total_preds},${sim_incorrect_preds},${sim_branch_exec_mispredicts},${sim_branch_exec_total}" >> "$OUTPUT_FILE"
     echo "Processed App: $app_name"
 done
 echo "------------------------------------------------"

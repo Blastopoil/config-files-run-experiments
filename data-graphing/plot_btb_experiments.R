@@ -41,7 +41,11 @@ if(length(file) == 0) stop("No .csv file was found")
 
 all_data <- data.frame()
 
-all_data <- read.csv(file, na.strings = c("NA", "NaN", "nan", "NAN", ""))
+all_data <- read.csv(
+      file,
+      stringsAsFactors = FALSE,
+      na.strings = c("N/A")
+    )
 
 # --- 3. Data Processing ---
 # Filters data acording to the passed arguments
@@ -90,12 +94,12 @@ all_data <- all_data[all_data$App %in% apps_to_filter, ]
 # Adds columns
 
 all_data <- all_data %>%
-  mutate(
-    across(c(Sim_Is, total_cond_predicts, wrong_cond_predicts), ~ suppressWarnings(as.numeric(.x))),
-    MPKI = ifelse(is.finite(wrong_cond_predicts / Sim_Is), 1000 * wrong_cond_predicts / Sim_Is, NA_real_),
-    CondMissRate = ifelse(is.finite(wrong_cond_predicts / total_cond_predicts), 100 * wrong_cond_predicts / total_cond_predicts, NA_real_),
-    AllMissRate = ifelse(is.finite(all_incorrect_preds / total_cond_predicts), 100 * all_incorrect_preds / total_cond_predicts, NA_real_)
-  )
+  #mutate(MPKI_spec = (branch_mispredicts_at_execute / Sim_Is) * 1000) %>%
+  mutate(MPKI = (wrong_cond_predicts / Sim_Is) * 1000) %>%
+  mutate(CondMissRate = (wrong_cond_predicts / total_cond_predicts) * 100) %>%
+  mutate(MissRate = (wrong_preds / total_preds) * 100) %>%
+  mutate(MissRate_spec = (branch_mispredicts_at_execute / branch_total_at_execute) * 100) %>%
+  mutate(CondBranches = total_cond_predicts)
 
 if (!(opt$metric %in% colnames(all_data))) {
   stop(paste("Métrica no encontrada:", opt$metric))
@@ -137,7 +141,7 @@ get_scale <- function() {
                       expand = expansion(mult = c(0, 0.05)) 
                       )
     scale
-  } else if (opt$metric == "CondMissRate") {
+  } else if (opt$metric %in% c("CondMissRate", "CondBranches", "MissRate", "MissRate_spec")) {
     scale <- scale_y_continuous(# Líneas principales cada 0.5 unidades
                       limits = c(0.9, 1.1),
                       breaks = seq(0, 2, by = 0.1), 
@@ -157,12 +161,8 @@ get_average_function <- function() {
           if (length(x) == 0) return(NA_real_)
           exp(mean(log(x)))
         }
-    } else if (opt$metric == "MPKI") {
-        mean
-    } else if (opt$metric == "CondMissRate") {
-        mean
     } else {
-        stop(paste("Metric not found:", opt$metric))
+        mean
     }
 }
 
@@ -173,6 +173,7 @@ if (opt$representation == "btb") {
   
   # The title and subtitle for the plot
   my_title = glue("{opt$metric} in relation to the BTB size. Config: BaseCPU + TAGE_SC_L")
+  my_subtitle = "Individual apps"
   if (is.null(opt$apps)) {
     my_subtitle = glue("All apps")
   } else if (opt$apps == "int") {
@@ -207,7 +208,7 @@ if (opt$representation == "btb") {
     geom_point(size = 2.5) +
     scale_x_continuous(
       trans = "log2", 
-      breaks = c(512, 1024, 2048, 4096, 8192, 16384)
+      breaks = c(512, 1024, 2048, 4096, 8192, 16384, 32768)
     ) +
     scale_color_manual(values = colours) +
     scale_shape_manual(values = rep(1:25, length.out = 30)) +
@@ -261,7 +262,7 @@ if (opt$representation == "btb") {
     geom_point(size = 2.5) +
     scale_x_continuous(
       trans = "log2", 
-      breaks = c(4, 8, 16, 32, 64)
+      breaks = c(1, 2, 4, 8, 16, 32, 64)
     ) +
     scale_color_manual(values = colours) +
     scale_shape_manual(values = rep(1:25, length.out = 30)) +

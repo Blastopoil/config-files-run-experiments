@@ -21,11 +21,11 @@ tabla_resumen <- df %>%
 
     # Extraemos el IPC en los extremos. 
     # Usamos mean() por si hubiese más de una medición para el mismo tamaño
-    ipc_1024 = mean(IPC[btb_size == 1024], na.rm = TRUE),
-    ipc_16384 = mean(IPC[btb_size == 16384], na.rm = TRUE),
+    ipc_512 = mean(IPC[btb_size == 512], na.rm = TRUE),
+    ipc_32768 = mean(IPC[btb_size == 32768], na.rm = TRUE),
     
     # Calculamos la pendiente (diferencia de IPC dividida entre los 4 saltos logarítmicos)
-    #pendiente = (ipc_16384 - ipc_1024) / 4,
+    #pendiente = (ipc_32768 - ipc_512) / 4,
     
     # Calcular el número de saltos directos sumando llamadas, condicionales e incondicionales.
     # Se usa mean() para obtener un valor representativo si variase ligeramente entre ejecuciones.
